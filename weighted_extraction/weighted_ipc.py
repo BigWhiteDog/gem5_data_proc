@@ -1,12 +1,15 @@
+import pandas as pd
+pd.set_option('display.width', 1000)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.max_colwidth', 500)
 import utils as u
 import utils.common as c
 import utils.target_stats as t
 import json
-import pandas as pd
 import numpy as np
 import sys
 import os.path as osp
-from scipy.stats import gmean
+from scipy.stats import gmean,tstd,tmean
 from statistics import geometric_mean
 import argparse
 import re
@@ -134,33 +137,176 @@ def compute_weighted_cpi(ver, confs, base, simpoints, prefix, insts_file_fmt, st
         print('Relative performance:')
         print(dfx)
 
+def compute_weighted_llc_mpki(ver, confs, base, simpoints, prefix, insts_file_fmt, stat_file,
+        clock_rate, min_coverage=0.0, blacklist=[], whitelist=[], merge_benckmark=False):
+    target = eval(f't.{prefix}llc_targets')
+    workload_dict = {}
+    bmk_stat = {}
+    for conf, file_path in confs.items():
+        workload_dict[conf] = {}
+        bmk_stat[conf] = {}
+        tree = u.glob_weighted_stats(
+                file_path,None,
+                get_funcs=[
+                    lambda file_path: u.single_stat_factory(target, 'l3.demand_misses', prefix)(file_path)/
+                        (u.single_stat_factory(target, 'Insts', prefix)(file_path)/1000),
+                    lambda file_path: tmean([u.single_stat_factory(target, 'slice_set_accesses::'+str(i), prefix)(file_path) for i in range(4)]) /
+                        (u.single_stat_factory(target, 'Insts', prefix)(file_path)/1000),
+                    lambda file_path: tstd([u.single_stat_factory(target, 'slice_set_accesses::'+str(i), prefix)(file_path) for i in range(4)],ddof=0) /
+                        (u.single_stat_factory(target, 'Insts', prefix)(file_path)/1000),
+                ],
+                stat_names=["llc_mpki","slice_access_pki","slice_access_pki_dev"],
+                simpoints=simpoints,
+                stat_file=stat_file,
+                )
+        with open(simpoints) as jf:
+            js = json.load(jf)
+            print(js.keys())
+        times = {}
+        for bmk in tree:
+            if bmk in blacklist:
+                continue
+            if len(whitelist) and bmk not in whitelist:
+                continue
+            weights = []
+            coverage = 0
+            count = 0
+            sum_misses = 0
+            sum_access_avg = 0
+            sum_access_std = 0
+            sum_insts = 0
+            for workload, df in tree[bmk].items():
+                selected = dict(js[workload])
+                keys = [int(x) for x in selected]
+                keys = [x for x in keys if x in df.index]
+                df = df.loc[keys]
+                mpki, weight = u.weighted_one_stat(df,"llc_mpki")
+                apki, _ = u.weighted_one_stat(df,"slice_access_pki")
+                apki_dev, _ = u.weighted_one_stat(df,"slice_access_pki_dev")
+                weights.append(weight)
 
-def gem5_spec2017():
-    ver = '17'
+                workload_dict[conf][workload] = {}
+                workload_dict[conf][workload]['LLC_MPKI'] = mpki
+                workload_dict[conf][workload]['slice_apki'] = apki
+                workload_dict[conf][workload]['slice_apki_dev'] = apki_dev
+                workload_dict[conf][workload]['Coverage'] = weight
+
+                # merge multiple sub-items of a benchmark
+                if merge_benckmark:
+                    insts_file = insts_file_fmt.format(ver, workload)
+                    insts = int(get_insts(insts_file))
+                    workload_dict[conf][workload]['TotalInst'] = insts
+                    workload_dict[conf][workload]['PredictedLLCMisses'] = (insts/1000)*mpki
+                    # workload_dict[conf][workload]['Predicted STD of slice access'] = (insts/1000)*apki_dev
+                    sum_misses += (insts/1000)*mpki
+                    sum_access_avg += (insts/1000)*apki
+                    sum_access_std += (insts/1000)*apki_dev
+                    sum_insts += insts
+                    coverage += weight
+                    count += 1
+
+            if merge_benckmark:
+                bmk_stat[conf][bmk] = {}
+                bmk_stat[conf][bmk]['LLC_MPKI'] = sum_misses/(sum_insts/1000)
+                bmk_stat[conf][bmk]['LLC_slice_apki'] = sum_access_avg/(sum_insts/1000)
+                bmk_stat[conf][bmk]['LLC_STD_slice_apki'] = sum_access_std/(sum_insts/1000)
+                bmk_stat[conf][bmk]['Coverage'] = coverage/count
+
+    for conf in confs:
+        print(conf, '='*60)
+        df = pd.DataFrame.from_dict(workload_dict[conf], orient='index')
+        workload_dict[conf] = df
+        print(df)
+
+        if merge_benckmark:
+            df = pd.DataFrame.from_dict(bmk_stat[conf], orient='index')
+            excluded = df[df['Coverage'] <= min_coverage]
+            df = df[df['Coverage'] > min_coverage]
+            print(df)
+            print('Excluded because of low coverage:', list(excluded.index))
+
+    for conf in confs.keys():
+        if conf == base:
+            continue
+        bmk_rel_mpki = {}
+        for bmk in bmk_stat[conf].keys():
+            bmk_rel_mpki[bmk] = bmk_stat[conf][bmk]['LLC_MPKI'] / bmk_stat[base][bmk]['LLC_MPKI']
+
+        print(conf + ' Relative MPKI:')
+        print(pd.DataFrame.from_dict(bmk_rel_mpki, orient='index'))
+
+
+
+def gem5_spec(ver='17'):
     confs = {
-            # 'O1': '/home51/zyy/expri_results/omegaflow_spec17/OmegaH1S1G1Config',
-            # 'O2': '/home51/zyy/expri_results/omegaflow_spec17/OmegaH1S1G2CL0Config',
-            # 'O1S0': '/home51/zyy/expri_results/omegaflow_spec17/OmegaH1S0G1Config',
-            # 'O1X': '/home51/zyy/expri_results/omegaflow_spec17/XOmegaH1S1G1Config',
-            # 'O1*-': '/home51/zyy/expri_results/omegaflow_spec17/OmegaH0S0G1Config',
-            # 'F1-': '/home51/zyy/expri_results/omegaflow_spec17/FFS0Config',
-            # 'F1H': '/home51/zyy/expri_results/omegaflow_spec17/FFH1Config',
-            'F1': '/home51/zyy/expri_results/omegaflow_spec17/TypicalFFConfig',
-            'F2': '/home51/zyy/expri_results/omegaflow_spec17/FFG2CL0CG1Config',
-            'FullO3': '/home51/zyy/expri_results/omegaflow_spec17/FullWindowO3Config'
+            'FullO3': f'/bigdata/zcq/gem5_playground/near_xs/test_new_wrapper{ver}/FullWindowO3Config',
+            'Complex': f'/bigdata/zcq/gem5_playground/near_xs/test_new_wrapper{ver}/ComplexO3Config',
             }
 
     compute_weighted_cpi(
             ver=ver,
             confs=confs,
             base='FullO3',
-            simpoints=f'/home51/zyy/expri_results/simpoints{ver}.json',
+            simpoints=f'/home51/zcq/playground/DirtyStuff/resources/simpoint_cpt_desc/simpoints{ver}_abort.json',
             prefix = '',
             stat_file='m5out/stats.txt',
             insts_file_fmt =
             '/bigdata/zyy/checkpoints_profiles/betapoint_profile_{}_fix_mem_addr/{}/nemu_out.txt',
-            clock_rate = 4 * 10**9,
-            min_coverage = 0.75,
+            clock_rate = 2 * 10**9,
+            min_coverage = 0.5,
+            # blacklist = ['gamess'],
+            merge_benckmark=True,
+            )
+
+    compute_weighted_llc_mpki(
+            ver=ver,
+            confs=confs,
+            base='FullO3',
+            simpoints=f'/home51/zcq/playground/DirtyStuff/resources/simpoint_cpt_desc/simpoints{ver}_abort.json',
+            prefix = '',
+            stat_file='m5out/stats.txt',
+            insts_file_fmt =
+            '/bigdata/zyy/checkpoints_profiles/betapoint_profile_{}_fix_mem_addr/{}/nemu_out.txt',
+            clock_rate = 2 * 10**9,
+            min_coverage = 0.5,
+            # blacklist = ['gamess'],
+            merge_benckmark=True,
+            )
+
+
+def gem5_spec2006():
+    ver = '06'
+    confs = {
+            'FullO3': '/bigdata/zcq/gem5_playground/near_xs/test_new_wrapper06/FullWindowO3Config',
+            'Complex': '/bigdata/zcq/gem5_playground/near_xs/test_new_wrapper06/ComplexO3Config',
+            }
+
+    compute_weighted_cpi(
+            ver=ver,
+            confs=confs,
+            base='FullO3',
+            simpoints=f'/home51/zcq/playground/DirtyStuff/resources/simpoint_cpt_desc/simpoints{ver}_abort.json',
+            prefix = '',
+            stat_file='m5out/stats.txt',
+            insts_file_fmt =
+            '/bigdata/zyy/checkpoints_profiles/betapoint_profile_{}_fix_mem_addr/{}/nemu_out.txt',
+            clock_rate = 2 * 10**9,
+            min_coverage = 0.5,
+            # blacklist = ['gamess'],
+            merge_benckmark=True,
+            )
+
+    compute_weighted_llc_mpki(
+            ver=ver,
+            confs=confs,
+            base='FullO3',
+            simpoints=f'/home51/zcq/playground/DirtyStuff/resources/simpoint_cpt_desc/simpoints{ver}_abort.json',
+            prefix = '',
+            stat_file='m5out/stats.txt',
+            insts_file_fmt =
+            '/bigdata/zyy/checkpoints_profiles/betapoint_profile_{}_fix_mem_addr/{}/nemu_out.txt',
+            clock_rate = 2 * 10**9,
+            min_coverage = 0.5,
             # blacklist = ['gamess'],
             merge_benckmark=True,
             )
@@ -190,5 +336,7 @@ def xiangshan_spec2006():
 
 
 if __name__ == '__main__':
-    xiangshan_spec2006()
+    # xiangshan_spec2006()
     # gem5_spec2017()
+    # gem5_spec2006()
+    gem5_spec("06")

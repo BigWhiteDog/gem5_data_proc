@@ -21,7 +21,10 @@ def single_stat_factory(targets, key, prefix=''):
             assert prefix == 'xs_'
             stats = c.xs_get_stats(stat_path, targets, re_targets=True)
         if stats is not None:
-            return stats[key]
+            if key in stats:
+                return stats[key]
+            else:
+                return 0
         else:
             return None
     return get_single_stat
@@ -43,7 +46,8 @@ def glob_stats(path: str, fname = 'm5out/stats.txt'):
             stat_files.append((x, stat_path))
     return stat_files
 
-def glob_weighted_stats(path: str, get_func, filtered=True,
+def glob_weighted_stats(path: str, get_func, filtered=True, stat_names=['ipc'],
+        get_funcs=None,
         simpoints='/home51/zyy/expri_results/simpoints17.json',
         stat_file='m5out/stats.txt'):
     stat_tree = {}
@@ -64,12 +68,17 @@ def glob_weighted_stats(path: str, get_func, filtered=True,
             point_dir = osp.join(workload_dir, point)
             stats_file = osp.join(point_dir, stat_file)
             weight = float(points[workload][str(point)])
-            stat = get_func(stats_file)
-            if stat is not None and stat > 0.001:
-                stat_tree[bmk][workload][int(point)] = (weight, stat)
+            if get_funcs is not None:
+                stat_list = [ f(stats_file) for f in get_funcs]
+                if None not in stat_list:
+                    stat_tree[bmk][workload][int(point)] = [weight] + stat_list
+            else:
+                stat = get_func(stats_file)
+                if stat is not None:
+                    stat_tree[bmk][workload][int(point)] = (weight, stat)
         if len(stat_tree[bmk][workload]):
             df = pd.DataFrame.from_dict(stat_tree[bmk][workload], orient='index')
-            df.columns = ['weight', 'ipc']
+            df.columns = ['weight'] + stat_names
             stat_tree[bmk][workload] = df
             print(df)
         else:
@@ -126,6 +135,9 @@ def weighted_cpi(df: pd.DataFrame):
     else:
         assert 'ipc' in df.columns
         return np.dot(df['weight'], 1.0/df['ipc']) / np.sum(df['weight']), np.sum(df['weight'])
+
+def weighted_one_stat(df: pd.DataFrame, stat_name):
+    return np.dot(df['weight'], df[stat_name]) / np.sum(df['weight']), np.sum(df['weight'])        
 
 
 def gen_json(path, output):

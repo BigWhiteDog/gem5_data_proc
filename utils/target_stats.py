@@ -26,11 +26,20 @@ cache_targets = [
     # 'cpu\.(icache.*_miss_rate)::\.cpus\.data',
     '(l3\.demand_miss_rate)::total',
     '(l3\.demand_misses)::total',
+    '(l3\.tags\.slice_set_accesses::\d+)',
     '(l2\.demand_miss_rate)::total',
     '(l2\.demand_misses)::total',
     'cpu\.(dcache\.demand_avg_miss_latency)::\.cpu\.data',
     'cpu\.(dcache\.demand_misses)::\.cpu\.data',
     # 'cpu\.iew\.iew(ExecLoadInsts)',
+]
+
+llc_targets = [
+    '(numCycles)',
+    'cpus?\.committed(Insts)',
+    'cpus?\.(ipc)',
+    '(l3\.demand_misses)::total',
+    'l3\.tags\.(slice_set_accesses::\d+)',
 ]
 
 branch_targets = [
