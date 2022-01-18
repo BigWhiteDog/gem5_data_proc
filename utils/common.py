@@ -213,8 +213,8 @@ def get_raw_stats_around(stat_file: str, insts: int=200*(10**6),
     new_insts = None
     new_cycles = None
 
-    p_insts = re.compile('cpus?.committedInsts\s+(\d+)\s+#')
-    p_cycles = re.compile('cpus?.numCycles\s+(\d+)\s+#')
+    p_insts = re.compile('cpu\d*.committedInsts\s+(\d+)\s+#')
+    p_cycles = re.compile('cpu\d*.numCycles\s+(\d+)\s+#')
 
     if insts > 500*(10**6):
         for line in reverse_readline(expu(stat_file)):
@@ -260,14 +260,22 @@ def get_raw_stats_around(stat_file: str, insts: int=200*(10**6),
                                 return old_buff
                         else:
                             old_insts = new_insts
-                            old_cycles = new_cylces
+                            old_cycles = new_cycles
                             old_buff = deepcopy(buff)
                             buff.clear()
 
                 elif p_insts.search(line) is not None:
-                    new_insts = int(p_insts.search(line).group(1))
+                    candidate_insts = int(p_insts.search(line).group(1))
+                    if new_insts is None:
+                        new_insts = candidate_insts
+                    elif candidate_insts >= new_insts:
+                            new_insts = candidate_insts
                 elif p_cycles.search(line) is not None:
-                    new_cylces = int(p_cycles.search(line).group(1))
+                    candidate_cycles = int(p_cycles.search(line).group(1))
+                    if new_cycles is None:
+                        new_cycles = candidate_cycles
+                    elif candidate_cycles >= new_cycles:
+                        new_cycles = candidate_cycles
 
     return old_buff
 

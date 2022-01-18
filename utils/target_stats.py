@@ -19,6 +19,8 @@ standard_targets = [
     '(numCycles)',
     'cpus?\.committed(Insts)',
     'cpus?\.(ipc)',
+    '(cpu\d*\.committedInsts)',
+    '(cpu\d*\.ipc)',
 ]
 
 cache_targets = [
@@ -26,7 +28,7 @@ cache_targets = [
     # 'cpu\.(icache.*_miss_rate)::\.cpus\.data',
     '(l3\.demand_miss_rate)::total',
     '(l3\.demand_misses)::total',
-    '(l3\.tags\.slice_set_accesses::\d+)',
+    # '(l3\.tags\.slice_set_accesses::\d+)',
     '(l2\.demand_miss_rate)::total',
     '(l2\.demand_misses)::total',
     'cpu\.(dcache\.demand_avg_miss_latency)::\.cpu\.data',
@@ -36,10 +38,9 @@ cache_targets = [
 
 llc_targets = [
     '(numCycles)',
-    'cpus?\.committed(Insts)',
-    'cpus?\.(ipc)',
     '(l3\.demand_misses)::total',
     'l3\.tags\.(slice_set_accesses::\d+)',
+    'l3\.tags\.(slice_set_accesses_unique::\d+)',
 ]
 
 branch_targets = [

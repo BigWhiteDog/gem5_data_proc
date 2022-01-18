@@ -1,3 +1,4 @@
+from ctypes import sizeof
 import os
 import os.path as osp
 import pandas as pd
@@ -6,6 +7,12 @@ import utils.common as c
 import utils.target_stats as t
 import json
 import re
+
+import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+# matplotlib.rcParams['font.size'] = 8.0
+plt.style.use('fivethirtyeight')
 
 def get_ipc(stat_path: str):
     targets = t.ipc_target
@@ -28,6 +35,26 @@ def single_stat_factory(targets, key, prefix=''):
         else:
             return None
     return get_single_stat
+
+def multi_stats_factory(targets, keys, prefix=''):
+    def get_multi_stats(stat_path: str):
+        # print(stat_path)
+        if prefix == '':
+            stats = c.get_stats(stat_path, targets, re_targets=True)
+        else:
+            assert prefix == 'xs_'
+            stats = c.xs_get_stats(stat_path, targets, re_targets=True)
+        if stats is not None:
+            res = []
+            for key in keys:
+                if key in stats:
+                    res.append(stats[key])
+                else:
+                    res.append(0)
+            return res
+        else:
+            return None
+    return get_multi_stats
 
 def glob_stats_l2(path: str, fname = 'm5out/stats.txt'):
     stats_files = []
@@ -159,11 +186,42 @@ def gen_json(path, output):
         json.dump(d, f, indent=4)
 
 
+def draw_llc_access(stat_file='m5out/stats.txt', get_func=None, get_funcs=None,):
+    unique_get_func = multi_stats_factory(t.llc_targets,["slice_set_accesses_unique::"+str(i) for i in range(4096)])
+    unique_list = unique_get_func(stat_file)
+    access_get_func = multi_stats_factory(t.llc_targets,["slice_set_accesses::"+str(i) for i in range(4096)])
+    access_list = access_get_func(stat_file)
+    # print(unique_list)
+    # print(len(unique_list))
+    # print(access_list)
+    # print(len(access_list))
+    x=np.arange(4096)
+    bar_width = 0.1
+
+    plt.figure(figsize=(24, 9))
+
+    plt.xlim(0,4096)
+    plt.subplot(2,1,1)
+    plt.xlim((0,4096))
+    plt.ylim((0,20))
+    plt.yticks(np.arange(0,20,2))
+    plt.title("access per set")
+    plt.bar(x=x,height=access_list)
+    plt.subplot(2,1,2)
+    plt.xlim((0,4096))
+    plt.ylim((0,8))
+    plt.title("unique access per set")
+    plt.bar(x=x,height=unique_list)
+
+    plt.show()
+    pass
+
 
 if __name__ == '__main__':
-    tree = glob_weighted_stats(
-            '/home51/zyy/expri_results/omegaflow_spec17/of_g1_perf/',
-            single_stat_factory(t.ipc_target, 'cpi')
-            )
+    # tree = glob_weighted_stats(
+    #         '/home51/zyy/expri_results/omegaflow_spec17/of_g1_perf/',
+    #         single_stat_factory(t.ipc_target, 'cpi')
+    #         )
     # gen_json('/home51/zyy/expri_results/nemu_take_simpoint_cpt_06',
     #         '/home51/zyy/expri_results/simpoints06')
+    draw_llc_access(stat_file='/home/zcq/lvna/5g/ff-reshape/gcc_22850000000_set_out/stats.txt')
