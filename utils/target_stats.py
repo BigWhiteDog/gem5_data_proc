@@ -36,6 +36,14 @@ cache_targets = [
     # 'cpu\.iew\.iew(ExecLoadInsts)',
 ]
 
+cache_set_targets = [
+    '(numCycles)',
+    '(l2\d*\.tags\.slice_set_accesses::\d+)',
+    '(l2\d*\.tags\.slice_set_accesses_unique::\d+)',
+    '(l3\.tags\.slice_set_accesses::\d+)',
+    '(l3\.tags\.slice_set_accesses_unique::\d+)',
+]
+
 llc_targets = [
     '(numCycles)',
     '(l3\.demand_misses)::total',
