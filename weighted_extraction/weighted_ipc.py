@@ -235,6 +235,50 @@ def compute_weighted_llc_mpki(ver, confs, base, simpoints, prefix, insts_file_fm
         print(conf + ' Relative MPKI:')
         print(pd.DataFrame.from_dict(bmk_rel_mpki, orient='index'))
 
+def compute_llc_miss_access(ver, confs, base, simpoints, prefix, insts_file_fmt, stat_file,
+        clock_rate, min_coverage=0.0, blacklist=[], whitelist=[], merge_benckmark=False):
+    target = eval(f't.{prefix}llc_targets')
+    workload_dict = {}
+    bmk_stat = {}
+    for conf, file_path in confs.items():
+        workload_dict[conf] = {}
+        bmk_stat[conf] = {}
+        tree = u.glob_weighted_stats(
+                file_path,None,
+                get_funcs=[
+                    lambda file_path: u.single_stat_factory(target, 'ipc', prefix)(file_path),
+                    lambda file_path: u.single_stat_factory(target, 'l3.demand_misses', prefix)(file_path),
+                    lambda file_path: u.single_stat_factory(target, 'slice_set_accesses', prefix)(file_path),
+                ],
+                stat_names=["ipc","llc_miss","llc_access"],
+                simpoints=simpoints,
+                stat_file=stat_file,
+                )
+        with open(simpoints) as jf:
+            js = json.load(jf)
+            print(js.keys())
+        times = {}
+        for bmk in tree:
+            if bmk in blacklist:
+                continue
+            if len(whitelist) and bmk not in whitelist:
+                continue
+            weights = []
+            for workload, df in tree[bmk].items():
+                selected = dict(js[workload])
+                keys = [int(x) for x in selected]
+                keys = [x for x in keys if x in df.index]
+                df = df.loc[keys]
+                ipc, weight = u.weighted_one_stat(df,"ipc")
+                dm, weight = u.weighted_one_stat(df,"llc_miss")
+                ssa, _ = u.weighted_one_stat(df,"llc_access")
+                weights.append(weight)
+
+                workload_dict[conf][workload] = {}
+                workload_dict[conf][workload]['IPC'] = ipc
+                workload_dict[conf][workload]['demand_misses'] = dm
+                workload_dict[conf][workload]['slice_set_accesses'] = ssa
+                workload_dict[conf][workload]['Coverage'] = weight
 
 
 def gem5_spec(ver='17'):
@@ -273,6 +317,39 @@ def gem5_spec(ver='17'):
             merge_benckmark=True,
             )
 
+def hw_gem5_spec(ver='17'):
+    confs = {
+            'FullO3': f'/home/zcq/lvna/5g/bm_search//test_new_wrapper{ver}/FullWindowO3Config',
+            }
+
+    compute_weighted_cpi(
+            ver=ver,
+            confs=confs,
+            base='FullO3',
+            simpoints=f'/home/zcq/lvna/5g/DirtyStuff/resources/simpoint_cpt_desc/simpoints17.json',
+            prefix = '',
+            stat_file='m5out/stats.txt',
+            insts_file_fmt =
+            '/bigdata/zyy/checkpoints_profiles/betapoint_profile_{}_fix_mem_addr/{}/nemu_out.txt',
+            clock_rate = 2 * 10**9,
+            min_coverage = 0.8,
+            # blacklist = ['gamess'],
+            merge_benckmark=False,
+            )
+    compute_llc_miss_access(
+            ver=ver,
+            confs=confs,
+            base='FullO3',
+            simpoints=f'/home/zcq/lvna/5g/DirtyStuff/resources/simpoint_cpt_desc/simpoints17.json',
+            prefix = '',
+            stat_file='m5out/stats.txt',
+            insts_file_fmt =
+            '/bigdata/zyy/checkpoints_profiles/betapoint_profile_{}_fix_mem_addr/{}/nemu_out.txt',
+            clock_rate = 2 * 10**9,
+            min_coverage = 0.8,
+            # blacklist = ['gamess'],
+            merge_benckmark=False,
+            )
 
 def gem5_spec2006():
     ver = '06'
@@ -339,4 +416,5 @@ if __name__ == '__main__':
     # xiangshan_spec2006()
     # gem5_spec2017()
     # gem5_spec2006()
-    gem5_spec("06")
+    # gem5_spec("06")
+    hw_gem5_spec()

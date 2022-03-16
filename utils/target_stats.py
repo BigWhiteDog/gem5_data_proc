@@ -46,7 +46,12 @@ cache_set_targets = [
 
 llc_targets = [
     '(numCycles)',
+    'cpus?\.committed(Insts)',
+    'cpus?\.(ipc)',
+    '(cpu\d*\.committedInsts)',
+    '(cpu\d*\.ipc)',
     '(l3\.demand_misses)::total',
+    'l3\.tags\.(slice_set_accesses)',
     'l3\.tags\.(slice_set_accesses::\d+)',
     'l3\.tags\.(slice_set_accesses_unique::\d+)',
 ]

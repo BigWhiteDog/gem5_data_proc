@@ -197,6 +197,9 @@ def draw_llc_access(stat_file='m5out/stats.txt', get_func=None, get_funcs=None, 
         unique_list_dict[i]= unique_get_func(stat_file)
         access_get_func = multi_stats_factory(t.cache_set_targets,["l3.tags.slice_set_accesses::"+str(i) for i in range(4096)],insts=start_inst+(i+1)*inst_step)
         access_list_dict[i]= access_get_func(stat_file)
+
+    # print(sum(access_list_dict[1]))
+    # return
     # print(unique_list)
     # print(len(unique_list))
     # print(access_list)
@@ -315,6 +318,30 @@ def draw_llc_cdf_access(stat_file='m5out/stats.txt', get_func=None, get_funcs=No
     plt.show()
     pass
 
+def draw_llc_tb_ipc(stat_dir_prefix='/home/zcq/lvna/5g/ff-reshape/log/xal2-xal1-gcc-gcc2_1000_'):
+    ipc_list_dict = {}
+    inck = [4,8,16,32,64,128,256,512]
+    for inc in inck:
+        stat_file=stat_dir_prefix + str(inc) +'/stats.txt'
+        ipcs_get_func = multi_stats_factory(t.standard_targets,["cpu"+str(i)+".ipc" for i in range(4)])
+        ipc_list_dict[inc]= ipcs_get_func(stat_file)
+    print(ipc_list_dict)
+    # print(len(unique_list))
+    # print(access_list)
+    # print(len(access_list))
+
+    plt.figure(figsize=(8, 6))
+    x_axis = list(ipc_list_dict.keys())
+    plt.xscale("log")
+
+    for i in range(4):
+        plt.plot(x_axis,[ ipcs[i] for ipcs in ipc_list_dict.values()] , label = f"cpu {i} ipc")
+
+    plt.legend()
+    plt.tight_layout(pad=2,h_pad=2)
+    plt.show()
+    pass
+
 if __name__ == '__main__':
     # tree = glob_weighted_stats(
     #         '/home51/zyy/expri_results/omegaflow_spec17/of_g1_perf/',
@@ -324,6 +351,7 @@ if __name__ == '__main__':
     #         '/home51/zyy/expri_results/simpoints06')
 
     # draw_llc_access(stat_file='/home/zcq/lvna/5g/ff-reshape/gcc_22850000000_set_out/stats.txt')
-    draw_llc_access(stat_file='/home/zcq/lvna/5g/ff-reshape/gcc_22850000000_set_out/stats.txt')
+    # draw_llc_cdf_access(stat_file='/home/zcq/lvna/5g/ff-reshape/gcc_22850000000_set_out/stats.txt')
+    draw_llc_tb_ipc()
     # draw_l2_access(stat_file='/home/zcq/lvna/5g/ff-reshape/xalancbmk_144250000000_0.153516_set_out/stats.txt',inst_step = 350000)
     # draw_llc_access(stat_file='/home/zcq/lvna/5g/ff-reshape/xalancbmk_144250000000_0.153516_set_out/stats.txt',inst_step = 350000)
