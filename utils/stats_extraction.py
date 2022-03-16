@@ -259,6 +259,62 @@ def draw_l2_access(stat_file='m5out/stats.txt', get_func=None, get_funcs=None, i
     pass
 
 
+def draw_llc_cdf_access(stat_file='m5out/stats.txt', get_func=None, get_funcs=None, inst_step = 2*(10**6)):
+    start_inst=50*(10**6)
+    unique_list_dict = {}
+    access_list_dict = {}
+    nsamples = 1
+    for i in range(nsamples):
+        unique_get_func = multi_stats_factory(t.cache_set_targets,["l3.tags.slice_set_accesses_unique::"+str(i) for i in range(4096)],insts=start_inst+(i+1)*inst_step)
+        unique_list_dict[i]= unique_get_func(stat_file)
+        access_get_func = multi_stats_factory(t.cache_set_targets,["l3.tags.slice_set_accesses::"+str(i) for i in range(4096)],insts=start_inst+(i+1)*inst_step)
+        access_list_dict[i]= access_get_func(stat_file)
+    # print(unique_list)
+    # print(len(unique_list))
+    # print(access_list)
+    # print(len(access_list))
+    x=np.arange(4096)
+    bar_width = 0.1
+
+    fig=plt.figure(figsize=(10, 18))
+
+    for i in range(nsamples):
+
+
+        max_access = np.max(access_list_dict[i])
+        count, bins_count = np.histogram(access_list_dict[i], bins=np.arange(max_access+1))
+        pdf = count / sum(count)
+        cdf = np.cumsum(pdf)
+        plt.subplot(3*nsamples, 1, nsamples*i+1)
+        plt.title(f"access per set histogram {i}")
+        plt.xlabel('sets whose access number == i')
+        plt.plot(bins_count[:-1], count)
+
+        plt.subplot(3*nsamples, 1, nsamples*i+2)
+        plt.title(f"access per set cdf {i}")
+        plt.xlabel('sets whose access number <= i')
+        plt.ylim(0,1.1)
+        plt.plot(bins_count[:-1], cdf)
+
+        plt.subplot(3*nsamples, 1, nsamples*i+3)
+        plt.title(f"access cdf for accesses in different type of set {i}")
+        plt.xlabel('accesses in set whose access number <= i')
+        access_count = count * bins_count[:-1]
+        print(f"total access: {sum(access_count)}")
+        pdf = access_count / sum(access_count)
+        cdf = np.cumsum(pdf)
+        plt.ylim(0,1.1)
+        plt.plot(bins_count[:-1], cdf)
+        # plt.title(f"unique access per set {i}")
+        # max_access = np.max(unique_list_dict[i])
+        # count, bins_count = np.histogram(unique_list_dict[i], bins=max_access)
+        # pdf = count / sum(count)
+        # cdf = np.cumsum(pdf)
+        # plt.plot(bins_count[1:], cdf)
+    plt.tight_layout(pad=2,h_pad=2)
+    plt.show()
+    pass
+
 if __name__ == '__main__':
     # tree = glob_weighted_stats(
     #         '/home51/zyy/expri_results/omegaflow_spec17/of_g1_perf/',
