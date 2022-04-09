@@ -213,8 +213,8 @@ def get_raw_stats_around(stat_file: str, insts: int=200*(10**6),
     new_insts = None
     new_cycles = None
 
-    p_insts = re.compile('cpu\d*.committedInsts\s+(\d+)\s+#')
-    p_cycles = re.compile('cpu\d*.numCycles\s+(\d+)\s+#')
+    p_insts = re.compile('cpu0*.committedInsts\s+(\d+)\s+#')
+    p_cycles = re.compile('cpu0*.numCycles\s+(\d+)\s+#')
 
     if insts > 500*(10**6):
         for line in reverse_readline(expu(stat_file)):
