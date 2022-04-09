@@ -1,6 +1,7 @@
 brief_targets = [
     'cpus?\.(ipc)',
     'cpus?\.(cpi)',
+    '(cpu\d*\.ipc)',
     'cpus?\.committed(Insts)',
     'host_(inst_rate)',
     #'cpus\.num(Cycles)'
@@ -21,6 +22,9 @@ standard_targets = [
     'cpus?\.(ipc)',
     '(cpu\d*\.committedInsts)',
     '(cpu\d*\.ipc)',
+    '(l2\d*\.overall_miss_rate::total)',
+    '(l3\.overall_miss_rate::total)',
+    "(l3.tags.slice_set_accesses80::[01])",
 ]
 
 cache_targets = [
@@ -38,10 +42,10 @@ cache_targets = [
 
 cache_set_targets = [
     '(numCycles)',
-    '(l2\d*\.tags\.slice_set_accesses::\d+)',
-    '(l2\d*\.tags\.slice_set_accesses_unique::\d+)',
-    '(l3\.tags\.slice_set_accesses::\d+)',
-    '(l3\.tags\.slice_set_accesses_unique::\d+)',
+    '(cpu\d*\.committedInsts)',
+    '(cpu\d*\.ipc)',
+    # '(l2\d*\.tags\.slice_set_accesses_\d*::\d+)',
+    '(l3\.tags\.slice_set_accesses_\d*::\d+)',
 ]
 
 llc_targets = [
@@ -54,7 +58,23 @@ llc_targets = [
     'l3\.tags\.(slice_set_accesses)',
     'l3\.tags\.(slice_set_accesses::\d+)',
     'l3\.tags\.(slice_set_accesses_unique::\d+)',
+    '(l3\.tags\.slice_set_accesses_avg)',
+    '(l3\.tags\.slice_set_accesses_var)',
+    '(l3\.tags\.slice_set_accesses_80)',
+    '(l3\.tags\.slice_set_accesses_80_lastT)',
+    '(l3\.tags\.slice_set_accesses_80_intersect)',
 ]
+
+llc_new_targets = [
+    '(numCycles)',
+    'cpus?\.committed(Insts)',
+    'cpus?\.(ipc)',
+    '(cpu\d*\.committedInsts)',
+    '(cpu\d*\.ipc)',
+    '(l3\.tags\.slice_set_accesses_avg)',
+    '(l3\.tags\.slice_set_accesses_var)',
+]
+
 
 branch_targets = [
     'cpus?\.(?:diewc|commit|iew)\.(branchMispredicts)',
