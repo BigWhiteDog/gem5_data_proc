@@ -279,6 +279,25 @@ def get_raw_stats_around(stat_file: str, insts: int=200*(10**6),
 
     return old_buff
 
+def get_raw_stats_lastn(stat_file: str, last_n = 1)-> list:
+    all_buff = []
+    buff = []
+    buff_time = 0
+
+    for line in reverse_readline(expu(stat_file)):
+        buff.append(line)
+        if line.startswith('---------- Begin Simulation Statistics ----------'):
+            tmp_buff = []
+            tmp_buff = deepcopy(buff)
+            buff.clear()
+            all_buff.append(tmp_buff)
+            buff_time += 1
+            if buff_time == last_n:
+                break
+
+    all_buff.reverse()
+    return all_buff
+
 
 def to_num(x: str) -> (int, float):
     if '.' in x:
@@ -397,6 +416,43 @@ def gem5_get_stats(stat_file: str, targets: list,
                     if not m is None:
                         chunk_stats[insts][m.group(1)] = to_num(m.group(2))
         return chunk_stats
+
+
+def gem5_get_lastn_stats(stat_file: str, targets: list,
+              re_targets=False,
+              last_n=1) -> dict:
+    if not os.path.isfile(expu(stat_file)):
+        print(stat_file)
+    assert(os.path.isfile(expu(stat_file)))
+
+    patterns = {}
+
+    if re_targets:
+        meta_pattern = re.compile('.*\((\w.+)\).*')
+        for t in targets:
+            meta = meta_pattern.search(t).group(1)
+            patterns[meta] = re.compile(t+'\s+(\d+\.?\d*)\s+')
+    else:
+        for t in targets:
+            patterns[t] = re.compile(t+'\s+(\d+\.?\d*)\s+')
+
+    lines_buffs = get_raw_stats_lastn(stat_file, last_n)
+    stats = {}
+    for i in range(last_n):
+        lines = lines_buffs[i]
+        for line in lines:
+            for k in patterns:
+                m = patterns[k].search(line)
+                if not m is None:
+                    if re_targets:
+                        if m.group(1) not in stats:
+                            stats[m.group(1)] = {}
+                        stats[m.group(1)][i] = to_num(m.group(2))
+                    else:
+                        if k not in stats:
+                            stats[k] = {}
+                        stats[k][i] = to_num(m.group(1))
+    return stats
 
 
 def get_stats(*args, **kwargs) -> dict:
@@ -580,6 +636,64 @@ def get_spec_ref_time(bmk, ver):
             if m is not None:
                 return float(m.group(0))
     return None
+
+def single_stat_factory(targets, key, prefix=''):
+    def get_single_stat(stat_path: str):
+        # print(stat_path)
+        if prefix == '':
+            stats = get_stats(stat_path, targets, re_targets=True)
+        else:
+            assert prefix == 'xs_'
+            stats = xs_get_stats(stat_path, targets, re_targets=True)
+        if stats is not None:
+            if key in stats:
+                return stats[key]
+            else:
+                return 0
+        else:
+            return None
+    return get_single_stat
+
+def multi_stats_factory(targets, keys, insts: int=100*(10**6),prefix=''):
+    def get_multi_stats(stat_path: str):
+        # print(stat_path)
+        if prefix == '':
+            stats = get_stats(stat_path, targets, insts=insts, re_targets=True)
+        else:
+            assert prefix == 'xs_'
+            stats = xs_get_stats(stat_path, targets, re_targets=True)
+        if stats is not None:
+            res = []
+            for key in keys:
+                if key in stats:
+                    res.append(stats[key])
+                else:
+                    res.append(0)
+            return res
+        else:
+            return None
+    return get_multi_stats
+
+def multi_stats_lastn_factory(targets, keys, last_n = 1):
+    def get_multi_stats(stat_path: str):
+        # print(stat_path)
+        stats = gem5_get_lastn_stats(stat_path, targets, re_targets=True, last_n = last_n)
+        if stats is not None:
+            res = {}
+            for key in keys:
+                if key in stats:
+                    tmp_res = []
+                    tmp_dic = stats[key]
+                    for i in range(last_n):
+                        tmp_res.append(tmp_dic.get(i,0))
+                    res[key] = tmp_res
+                else:
+                    res[key] = [0 for _ in range(last_n)]
+            return res
+        else:
+            return None
+    return get_multi_stats
+
 
 if __name__ == '__main__':
     chunks = get_all_chunks(
