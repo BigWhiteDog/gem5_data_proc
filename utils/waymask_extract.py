@@ -244,9 +244,10 @@ def draw_ipc_speedup(ax,log_dir: str, workloads: List[str]):
         speed_up_dict[w] = {}
     speed_up_dict['mix'] = {}
     for p in parts_name:
-        ipc_get_func = multi_stats_factory(t.cache_set_targets,[f"cpu{i}.ipc" for i in range(nsamples)])
+        ipc_get_func = c.multi_stats_lastn_factory(t.cache_set_targets,[f"cpu{i}.ipc" for i in range(nsamples)],last_n=20)
         st_file = os.path.join(stats_dir , p + "/stats.txt")
-        ipcs= ipc_get_func(st_file)
+        ipcs_dict = ipc_get_func(st_file)
+        ipcs = [np.average(ipcs_dict[f"cpu{i}.ipc"]) for i in range(nsamples)]
         for w,ipc in zip(workloads,ipcs):
             ipc_dict[w][p] = ipc
     for w in workloads:
@@ -256,8 +257,8 @@ def draw_ipc_speedup(ax,log_dir: str, workloads: List[str]):
         speed_up_dict['mix'][p] = np.average([speed_up_dict[w][p] for w in workloads])
 
     xlabels = workloads + ['mix'] #workloads+mix
-    other_labels = list(filter(lambda x: not x.startswith('0'), parts_name)) #all nopart , qos ...
-    pl0 = list(filter(lambda x: x.startswith('0'), parts_name))
+    # other_labels = list(filter(lambda x: not x.startswith('0'), parts_name)) #all nopart , qos ...
+    other_labels = ['nopart']
     color_labels = sorted(list(filter(lambda x: x.startswith('0'), parts_name)), key=cmp_to_key(compare_waymasks)) #all 0x1-0xfe ... sorted
     color_labels = other_labels + color_labels # nopart, qos, 0x1-0xfe, ...
 
@@ -284,10 +285,6 @@ def draw_ipc_speedup(ax,log_dir: str, workloads: List[str]):
     # ax.legend()
 
     return ax
-    # fig.tight_layout()
-    # # .tight_layout(pad=2,h_pad=2)
-    # plt.show()
-    pass
 
 if __name__ == '__main__':
     # draw_llc_access(stat_file='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/mcf-sphinx3_/stats.txt')
@@ -297,11 +294,12 @@ if __name__ == '__main__':
     # draw_ipc_speedup(log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/10M',workloads=['mcf','xalancbmk'])
     # draw_ipc_speedup(log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/10M',workloads=['mcf','sphinx3'])
     fig, ax = plt.subplots(3,2)
-    draw_ipc_speedup(ax[0][0],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/20M',workloads=['mcf','omnetpp'])
-    draw_ipc_speedup(ax[1][0],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/20M',workloads=['mcf','xalancbmk'])
-    draw_ipc_speedup(ax[2][0],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/20M',workloads=['mcf','sphinx3'])
-    draw_ipc_speedup(ax[0][1],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/20M',workloads=['omnetpp','xalancbmk'])
-    draw_ipc_speedup(ax[1][1],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/20M',workloads=['omnetpp','sphinx3'])
+    draw_ipc_speedup(ax[0][0],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/40x1M',workloads=['mcf','omnetpp'])
+    draw_ipc_speedup(ax[1][0],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/40x1M',workloads=['mcf','xalancbmk'])
+    draw_ipc_speedup(ax[2][0],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/40x1M',workloads=['mcf','sphinx3'])
+    draw_ipc_speedup(ax[0][1],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/40x1M',workloads=['omnetpp','xalancbmk'])
+    draw_ipc_speedup(ax[1][1],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/40x1M',workloads=['omnetpp','sphinx3'])
+    draw_ipc_speedup(ax[2][1],log_dir='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/40x1M',workloads=['xalancbmk','sphinx3'])
     plt.show()
     # draw_llc_tb_ipc()
     # draw_l2_access(stat_file='/home/zcq/lvna/5g/ff-reshape/xalancbmk_144250000000_0.153516_set_out/stats.txt',inst_step = 350000)
