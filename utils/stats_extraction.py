@@ -192,11 +192,9 @@ def draw_llc_access(stat_file='m5out/stats.txt', get_func=None, get_funcs=None, 
     unique_list_dict = {}
     access_list_dict = {}
     nsamples = 2
-    for i in range(nsamples):
-        unique_get_func = multi_stats_factory(t.cache_set_targets,["l3.tags.slice_set_accesses_unique::"+str(i) for i in range(4096)],insts=start_inst+(i+1)*inst_step)
-        unique_list_dict[i]= unique_get_func(stat_file)
-        access_get_func = multi_stats_factory(t.cache_set_targets,["l3.tags.slice_set_accesses::"+str(i) for i in range(4096)],insts=start_inst+(i+1)*inst_step)
-        access_list_dict[i]= access_get_func(stat_file)
+    for id in range(nsamples):
+        access_get_func = multi_stats_factory(t.cache_set_targets,["l3.tags.slice_set_accesses_"+str(id)+"::"+str(i) for i in range(4096)],insts=start_inst+5000)
+        access_list_dict[id]= access_get_func(stat_file)
 
     # print(sum(access_list_dict[1]))
     # return
@@ -207,23 +205,18 @@ def draw_llc_access(stat_file='m5out/stats.txt', get_func=None, get_funcs=None, 
     x=np.arange(4096)
     bar_width = 0.1
 
-    fig=plt.figure(figsize=(24, 30))
-    plt.title("LLC step")
+    fig=plt.figure(figsize=(8, 6))
+    plt.title("LLC access for different id")
 
     plt.xlim(0,4096)
     for i in range(nsamples):
-        plt.subplot(2*nsamples, 1, i+1)
+        plt.subplot(nsamples, 1, i+1)
         plt.xlim((0,4096))
         plt.ylim((0,20))
-        plt.yticks(np.arange(0,20,2))
-        plt.title(f"access per set {i}")
+        plt.yticks(np.arange(0,20,1))
+        plt.title(f"access per set id{i}")
         plt.bar(x=x,height=access_list_dict[i])
-        plt.subplot(2*nsamples, 1, i+1+nsamples)
-        plt.xlim((0,4096))
-        plt.ylim((0,16))
-        plt.title(f"unique access per set {i}")
-        plt.bar(x=x,height=unique_list_dict[i])
-    plt.tight_layout(pad=2,h_pad=2)
+    # plt.tight_layout(pad=2,h_pad=2)
     plt.show()
     pass
 
@@ -352,6 +345,9 @@ if __name__ == '__main__':
 
     # draw_llc_access(stat_file='/home/zcq/lvna/5g/ff-reshape/gcc_22850000000_set_out/stats.txt')
     # draw_llc_cdf_access(stat_file='/home/zcq/lvna/5g/ff-reshape/gcc_22850000000_set_out/stats.txt')
-    draw_llc_tb_ipc()
+    draw_llc_access(stat_file='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/origin_mcf-xalancbmk/stats.txt')
+    draw_llc_access(stat_file='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/origin_omnetpp-sphinx3/stats.txt')
+    draw_llc_access(stat_file='/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/origin_sphinx3-xalancbmk/stats.txt')
+    # draw_llc_tb_ipc()
     # draw_l2_access(stat_file='/home/zcq/lvna/5g/ff-reshape/xalancbmk_144250000000_0.153516_set_out/stats.txt',inst_step = 350000)
     # draw_llc_access(stat_file='/home/zcq/lvna/5g/ff-reshape/xalancbmk_144250000000_0.153516_set_out/stats.txt',inst_step = 350000)
