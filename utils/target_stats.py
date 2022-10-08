@@ -67,12 +67,27 @@ llc_targets = [
 
 llc_new_targets = [
     '(numCycles)',
-    'cpus?\.committed(Insts)',
-    'cpus?\.(ipc)',
+    # 'cpus?\.committed(Insts)',
+    # 'cpus?\.(ipc)',
     '(cpu\d*\.committedInsts)',
     '(cpu\d*\.ipc)',
-    '(l3\.tags\.slice_set_accesses_avg)',
-    '(l3\.tags\.slice_set_accesses_var)',
+    '(l3\.demand_hits)::total',
+    '(l3\.demand_misses)::total',
+    '(l3\.demand_miss_rate)::total',
+    '(l3\.tags\.tag_accesses)',
+    '(l3\.tags\.slice_set_accesses80::\d+)',
+    '(l3\.demand_hits::\.cpu\d*.mmu.dtb)',
+    '(l3\.demand_hits::\.cpu\d*.mmu.itb)',
+    '(l3\.demand_hits::\.cpu\d*.inst)',
+    '(l3\.demand_hits::\.cpu\d*.data)',
+    '(l3\.demand_misses::\.cpu\d*.mmu.dtb)',
+    '(l3\.demand_misses::\.cpu\d*.mmu.itb)',
+    '(l3\.demand_misses::\.cpu\d*.inst)',
+    '(l3\.demand_misses::\.cpu\d*.data)',
+]
+
+llc_miss_only = [
+    '(l3\.demand_miss_rate::\.cpu\d*)',
 ]
 
 
