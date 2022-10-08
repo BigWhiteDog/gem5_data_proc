@@ -1,3 +1,4 @@
+from functools import reduce
 import sys
 from os.path import join as pjoin
 from os.path import expanduser as expu
@@ -5,6 +6,8 @@ import re
 import json
 from copy import deepcopy
 import pandas as pd
+import utils.target_stats as t
+import numpy as np
 
 from local_configs import Env
 from paths import *
@@ -618,8 +621,8 @@ def get_spec_ref_time(bmk, ver):
         ref_file = "/home/zyy/research-data/spec2006/benchspec/CPU2006/{}/data/ref/reftime"
     else:
         assert ver == '17'
-        top = "/home/zyy/research-data/spec2017_20201126/benchspec/CPU"
-        ref_file = "/home/zyy/research-data/spec2017_20201126/benchspec/CPU/{}/data/refrate/reftime"
+        top = "/nfs-nvme/home/share/spec2017_slim/benchspec/CPU"
+        ref_file = "/nfs-nvme/home/share/spec2017_slim/benchspec/CPU/{}/data/refrate/reftime"
 
     codename = None
     for d in os.listdir(top):
@@ -694,6 +697,35 @@ def multi_stats_lastn_factory(targets, keys, last_n = 1):
             return None
     return get_multi_stats
 
+def extract_samples_raw_json(base_dir,ncores=4,last_nsamples = 4):
+    st_file = os.path.join(base_dir,"stats.txt")
+    st_filter_file = os.path.join(base_dir,f"{last_nsamples}period.json")
+    target_keys = [f'cpu{i}.ipc' for i in range(ncores)]
+    target_keys.extend(['l3.tags.tag_accesses','l3.demand_miss_rate','l3.demand_hits','l3.demand_misses'])
+    extra_keys = []
+    extra_keys.extend([f'l3.demand_hits::.cpu{i}.mmu.dtb' for i in range(ncores)])
+    extra_keys.extend([f'l3.demand_hits::.cpu{i}.mmu.itb' for i in range(ncores)])
+    extra_keys.extend([f'l3.demand_hits::.cpu{i}.inst' for i in range(ncores)])
+    extra_keys.extend([f'l3.demand_hits::.cpu{i}.data' for i in range(ncores)])
+    extra_keys.extend([f'l3.demand_misses::.cpu{i}.mmu.dtb' for i in range(ncores)])
+    extra_keys.extend([f'l3.demand_misses::.cpu{i}.mmu.itb' for i in range(ncores)])
+    extra_keys.extend([f'l3.demand_misses::.cpu{i}.inst' for i in range(ncores)])
+    extra_keys.extend([f'l3.demand_misses::.cpu{i}.data' for i in range(ncores)])
+    target_keys.extend(extra_keys)
+    stats_get_func = multi_stats_lastn_factory(t.llc_new_targets, target_keys,last_n=last_nsamples)
+    one_dict = stats_get_func(st_file)
+    for i in range(ncores):
+        hit_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demand_hits' in x, one_dict.keys())
+        demand_hits = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], hit_iter))
+        miss_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demand_misses' in x, one_dict.keys())
+        demand_misses = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], miss_iter))
+        demand_misses_rate = demand_misses / (demand_hits + demand_misses)
+        one_dict[f'l3.demand_miss_rate::.cpu{i}'] = demand_misses_rate.tolist()
+        one_dict[f'l3.demand_misses::.cpu{i}'] = demand_misses.tolist()
+        one_dict[f'l3.demand_hits::.cpu{i}'] = demand_hits.tolist()
+    with open(st_filter_file, 'w') as testfile:
+        json.dump(one_dict, testfile, indent=4)
+    return one_dict
 
 if __name__ == '__main__':
     chunks = get_all_chunks(
