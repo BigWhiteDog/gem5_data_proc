@@ -697,32 +697,61 @@ def multi_stats_lastn_factory(targets, keys, last_n = 1):
             return None
     return get_multi_stats
 
-def extract_samples_raw_json(base_dir,ncores=4,last_nsamples = 4):
+def extract_samples_raw_json(base_dir,ncores=4,last_nsamples = 4,target=t.llc_new_targets):
     st_file = os.path.join(base_dir,"stats.txt")
     st_filter_file = os.path.join(base_dir,f"{last_nsamples}period.json")
-    target_keys = [f'cpu{i}.ipc' for i in range(ncores)]
-    target_keys.extend(['l3.tags.tag_accesses','l3.demand_miss_rate','l3.demand_hits','l3.demand_misses'])
-    extra_keys = []
-    extra_keys.extend([f'l3.demand_hits::.cpu{i}.mmu.dtb' for i in range(ncores)])
-    extra_keys.extend([f'l3.demand_hits::.cpu{i}.mmu.itb' for i in range(ncores)])
-    extra_keys.extend([f'l3.demand_hits::.cpu{i}.inst' for i in range(ncores)])
-    extra_keys.extend([f'l3.demand_hits::.cpu{i}.data' for i in range(ncores)])
-    extra_keys.extend([f'l3.demand_misses::.cpu{i}.mmu.dtb' for i in range(ncores)])
-    extra_keys.extend([f'l3.demand_misses::.cpu{i}.mmu.itb' for i in range(ncores)])
-    extra_keys.extend([f'l3.demand_misses::.cpu{i}.inst' for i in range(ncores)])
-    extra_keys.extend([f'l3.demand_misses::.cpu{i}.data' for i in range(ncores)])
-    target_keys.extend(extra_keys)
-    stats_get_func = multi_stats_lastn_factory(t.llc_new_targets, target_keys,last_n=last_nsamples)
+    target_keys = []
+    if ncores > 1:
+        target_keys.extend([f'cpu{i}.ipc' for i in range(ncores)])
+        target_keys.extend([f'cpu{i}.numCycles' for i in range(ncores)])
+        target_keys.extend([f'cpu{i}.committedInsts' for i in range(ncores)])
+        target_keys.extend([f'cpu{i}.dcache.demand_miss_rate' for i in range(ncores)])
+        target_keys.extend([f'cpu{i}.icache.demand_miss_rate' for i in range(ncores)])
+        target_keys.extend([f'l2{i}.demand_miss_rate' for i in range(ncores)])
+        target_keys.extend([f'cpu{i}.dcache.req_pkt_reach_num' for i in range(ncores)])
+        target_keys.extend([f'cpu{i}.icache.req_pkt_reach_num' for i in range(ncores)])
+        target_keys.extend([f'l2{i}.req_pkt_reach_num' for i in range(ncores)])
+        extra_keys = []
+        extra_keys.extend([f'l3.demand_hits::.cpu{i}.mmu.dtb' for i in range(ncores)])
+        extra_keys.extend([f'l3.demand_hits::.cpu{i}.mmu.itb' for i in range(ncores)])
+        extra_keys.extend([f'l3.demand_hits::.cpu{i}.inst' for i in range(ncores)])
+        extra_keys.extend([f'l3.demand_hits::.cpu{i}.data' for i in range(ncores)])
+        extra_keys.extend([f'l3.demand_misses::.cpu{i}.mmu.dtb' for i in range(ncores)])
+        extra_keys.extend([f'l3.demand_misses::.cpu{i}.mmu.itb' for i in range(ncores)])
+        extra_keys.extend([f'l3.demand_misses::.cpu{i}.inst' for i in range(ncores)])
+        extra_keys.extend([f'l3.demand_misses::.cpu{i}.data' for i in range(ncores)])
+        target_keys.extend(extra_keys)
+    else:
+        target_keys.append(f'cpu.ipc')
+        target_keys.extend([f'cpu.dcache.demand_miss_rate'])
+        target_keys.extend([f'cpu.icache.demand_miss_rate'])
+        target_keys.extend([f'l2.demand_miss_rate'])
+        target_keys.extend([f'cpu.dcache.req_pkt_reach_num'])
+        target_keys.extend([f'cpu.icache.req_pkt_reach_num'])
+        target_keys.extend([f'l2.req_pkt_reach_num'])
+        extra_keys = []
+        extra_keys.append(f'l3.demand_hits::.cpu.mmu.dtb')
+        extra_keys.append(f'l3.demand_hits::.cpu.mmu.itb')
+        extra_keys.append(f'l3.demand_hits::.cpu.inst')
+        extra_keys.append(f'l3.demand_hits::.cpu.data')
+        extra_keys.append(f'l3.demand_misses::.cpu.mmu.dtb')
+        extra_keys.append(f'l3.demand_misses::.cpu.mmu.itb')
+        extra_keys.append(f'l3.demand_misses::.cpu.inst')
+        extra_keys.append(f'l3.demand_misses::.cpu.data')
+        target_keys.extend(extra_keys)
+    target_keys.extend(['l3.req_pkt_reach_num','l3.demand_miss_rate','l3.demand_hits','l3.demand_misses'])
+    stats_get_func = multi_stats_lastn_factory(target, target_keys,last_n=last_nsamples)
     one_dict = stats_get_func(st_file)
-    for i in range(ncores):
-        hit_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demand_hits' in x, one_dict.keys())
-        demand_hits = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], hit_iter))
-        miss_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demand_misses' in x, one_dict.keys())
-        demand_misses = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], miss_iter))
-        demand_misses_rate = demand_misses / (demand_hits + demand_misses)
-        one_dict[f'l3.demand_miss_rate::.cpu{i}'] = demand_misses_rate.tolist()
-        one_dict[f'l3.demand_misses::.cpu{i}'] = demand_misses.tolist()
-        one_dict[f'l3.demand_hits::.cpu{i}'] = demand_hits.tolist()
+    if ncores > 1:
+        for i in range(ncores):
+            hit_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demand_hits' in x, one_dict.keys())
+            demand_hits = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], hit_iter))
+            miss_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demand_misses' in x, one_dict.keys())
+            demand_misses = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], miss_iter))
+            demand_misses_rate = demand_misses / (demand_hits + demand_misses)
+            one_dict[f'l3.demand_miss_rate::.cpu{i}'] = demand_misses_rate.tolist()
+            one_dict[f'l3.demand_misses::.cpu{i}'] = demand_misses.tolist()
+            one_dict[f'l3.demand_hits::.cpu{i}'] = demand_hits.tolist()
     with open(st_filter_file, 'w') as testfile:
         json.dump(one_dict, testfile, indent=4)
     return one_dict

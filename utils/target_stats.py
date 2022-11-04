@@ -67,6 +67,7 @@ llc_targets = [
 
 llc_new_targets = [
     '(numCycles)',
+    '(cpu\d*\.numCycles)',
     # 'cpus?\.committed(Insts)',
     # 'cpus?\.(ipc)',
     '(cpu\d*\.committedInsts)',
@@ -74,7 +75,9 @@ llc_new_targets = [
     '(l3\.demand_hits)::total',
     '(l3\.demand_misses)::total',
     '(l3\.demand_miss_rate)::total',
-    '(l3\.tags\.tag_accesses)',
+    # '(l3\.tags\.tag_accesses)',
+    '(l3\.req_pkt_reach_num::\d+)',
+    '(l3\.req_pkt_reach_num)::total',
     '(l3\.tags\.slice_set_accesses80::\d+)',
     '(l3\.demand_hits::\.cpu\d*.mmu.dtb)',
     '(l3\.demand_hits::\.cpu\d*.mmu.itb)',
@@ -84,6 +87,12 @@ llc_new_targets = [
     '(l3\.demand_misses::\.cpu\d*.mmu.itb)',
     '(l3\.demand_misses::\.cpu\d*.inst)',
     '(l3\.demand_misses::\.cpu\d*.data)',
+    '(l2\d*\.demand_miss_rate)::total',
+    '(cpu\d*\.dcache\.demand_miss_rate)::total',
+    '(cpu\d*\.icache\.demand_miss_rate)::total',
+    '(l2\d*\.req_pkt_reach_num)::total',
+    '(cpu\d*\.dcache\.req_pkt_reach_num)::total',
+    '(cpu\d*\.icache\.req_pkt_reach_num)::total',
 ]
 
 llc_miss_only = [

@@ -3,7 +3,6 @@ from operator import delitem
 import os
 import numpy as np
 import utils.common as c
-from utils.common import multi_stats_lastn_factory
 import utils.target_stats as t
 import csv
 import numpy as np
@@ -51,19 +50,19 @@ def report_hmmer(s_dicts:dict):
         ax[fx,fy].set_title(f'cpu{i}')
     ax[0,1].legend(loc='upper right',ncol=1,fontsize=10,bbox_to_anchor=(1.01,1.01))
     # fig_path = os.path.join(base_dir,'tb_ipc_speedup.png')
-    plt.savefig(f'tb_period_ipc_speedup.png',dpi=300)
+    plt.savefig(f'3m_tb_period_ipc_speedup.png',dpi=300)
 
 if __name__ == '__main__':
     # t_work_combine = ['hmmer_o31-hmmer0-hmmer_o30-hmmer1']
     # report_hmmer('/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/new_hw_test/16M/hmmer_o31-hmmer0-hmmer_o30-hmmer1')
-    all_base  = '/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/new_hw_test/period4/try-tb/period_hmmer_o3_0-period_hmmer_o3_3-period_hmmer_o2_0-period_hmmer_o2_2'
+    all_base  = '/nfs/home/zhangchuanqi/lvna/5g/ff-reshape/log/new_hw_test/period_hmmer_o3_0-period_hmmer_o3_3-period_hmmer_o2_0-period_hmmer_o2_2/3072kBLLC/try-tb'
     tb_base = os.path.join(all_base,'l3-nopart','l2-nopart')
     tb_bases = os.listdir(tb_base)
     st_dict = {}
     for tb in tb_bases:
         if tb.startswith('l3-tb'):
             tb_path = os.path.join(tb_base,tb)
-            # extract_samples_raw_json(tb_path)
+            c.extract_samples_raw_json(tb_path)
             with open(os.path.join(tb_path,'4period.json')) as f:
                 st_json = json.load(f)
             tb_inc = tb.split('-')[3]
