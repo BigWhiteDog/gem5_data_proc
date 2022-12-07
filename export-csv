@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import pandas as pd
+
+from utils import common as c
+# from utils import insert_avg_dict as iad
+from utils import multpath_csv
+
+
+parser = argparse.ArgumentParser(description='check sum of slots',
+                                prefix_chars='-')
+parser.add_argument('-ln', '--lastn',
+                    default=8, type=int,
+                    help='last n slots to be searched')
+parser.add_argument('-n', '--num-cores',
+                    default=4, type=int,
+                    help='core number to be searched')
+opt = parser.parse_args()
+curdir = os.getcwd()
+
+multpath_csv.handle_one_path(curdir,ncore=opt.num_cores,last_nsamples=opt.lastn)

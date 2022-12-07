@@ -9,6 +9,7 @@ brief_targets = [
 ipc_target = [
     'cpus?\.(ipc)',
     'cpus?\.(cpi)',
+    'cpus?\.committed(Insts)',
 ]
 
 flow_target = [
@@ -63,6 +64,28 @@ llc_targets = [
     '(l3\.tags\.slice_set_accesses_80)',
     '(l3\.tags\.slice_set_accesses_80_lastT)',
     '(l3\.tags\.slice_set_accesses_80_intersect)',
+]
+
+llc_targets_newgem = [
+    '(numCycles)',
+    'cpus?\.committed(Insts)',
+    'cpus?\.(ipc)',
+    '(cpu\d*\.committedInsts)',
+    '(cpu\d*\.ipc)',
+    '(l3\.demandMisses)::total',
+    '(l3\.demandHits)::total',
+    '(l3\.demandMisses)::total',
+    '(l3\.demandMissRate)::total',
+    '(l3\.demandHits::cpu\d*.mmu.dtb)',
+    '(l3\.demandHits::cpu\d*.mmu.itb)',
+    '(l3\.demandHits::cpu\d*.inst)',
+    '(l3\.demandHits::cpu\d*.data)',
+    '(l3\.demandHits::l2\d*.prefetcher)',
+    '(l3\.demandMisses::cpu\d*.mmu.dtb)',
+    '(l3\.demandMisses::cpu\d*.mmu.itb)',
+    '(l3\.demandMisses::cpu\d*.inst)',
+    '(l3\.demandMisses::cpu\d*.data)',
+    '(l3\.demandMisses::l2\d*.prefetcher)',
 ]
 
 llc_new_targets = [

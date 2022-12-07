@@ -1,0 +1,1 @@
+select SETIDX,count(*) FROM HitMissTrace group by SETIDX ORDER BY count(*) DESC LIMIT 10;

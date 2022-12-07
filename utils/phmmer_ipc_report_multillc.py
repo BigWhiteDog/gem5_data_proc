@@ -59,9 +59,10 @@ if __name__ == '__main__':
     way_stat_maxipc_size_dict = {}
     for s in sorted_size:
         way_stat_maxipc_size_dict[s] = max(size_dict[s].items(),key=lambda x: np.average(x[1]['cpu0.ipc']))
+        print(s,way_stat_maxipc_size_dict[s][0])
 
-    fig,ax = plt.subplots(2,6,sharex=True)
-    fig.set_size_inches(48,9)
+    fig,ax = plt.subplots(2,6)
+    fig.set_size_inches(48,12)
 
     x = np.arange(len(sorted_size))
     xlabels = [ size_re.match(s).group(0) for s in sorted_size]
@@ -74,9 +75,15 @@ if __name__ == '__main__':
         width = 0.35
         nopart_ipc_iter = map(lambda x: np.average(size_dict[x]['nopart'][f'cpu{i}.ipc']) ,sorted_size)
         max_ipc_iter = map(lambda x: np.average(way_stat_maxipc_size_dict[x][1][f'cpu{i}.ipc']) ,sorted_size)
+        nopart_ipc_list = list(nopart_ipc_iter)
+        max_ipc_list = list(max_ipc_iter)
+        print(f'print core{i} nopart ipcs:')
+        print(nopart_ipc_list)
+        print(f'print core{i} max0 ipcs:')
+        print(max_ipc_list)
         #draw ipc bar of different size
-        rect0 = ax_ipc_bar.bar(x-width/2, list(nopart_ipc_iter) , width, label='native mix ipc')
-        rect1 = ax_ipc_bar.bar(x+width/2, list(max_ipc_iter), width, label='ipc when core0 reach max')
+        rect0 = ax_ipc_bar.bar(x-width/2, nopart_ipc_list , width, label='native mix ipc')
+        rect1 = ax_ipc_bar.bar(x+width/2, max_ipc_list, width, label='ipc when core0 reach max')
         ax_ipc_bar.set_xticks(x,xlabels)
         ax_ipc_bar.set_ylabel('average IPC')
         ax_ipc_bar.set_ylim(1.4,1.9)
@@ -87,10 +94,11 @@ if __name__ == '__main__':
         # ax_ipc_bar.bar_label(rect1, padding=3)
         #draw speedup bar of different size
         ax_speedup_bar = ax[fx,fy+1]
-        nopart_ipc_iter = map(lambda x: np.average(size_dict[x]['nopart'][f'cpu{i}.ipc']) ,sorted_size)
-        max_ipc_iter = map(lambda x: np.average(way_stat_maxipc_size_dict[x][1][f'cpu{i}.ipc']) ,sorted_size)
-        rect3 = ax_speedup_bar.bar(x, list(map(lambda x: x[0]/x[1], zip(max_ipc_iter,nopart_ipc_iter))) , width, label='speedup')
-        ax_ipc_bar.set_xticks(x,xlabels)
+        speedup_array = np.array(max_ipc_list) / np.array(nopart_ipc_list)
+        print(f'print core{i} speedup:')
+        print(speedup_array.tolist())
+        rect3 = ax_speedup_bar.bar(x, speedup_array , width, label='speedup')
+        ax_speedup_bar.set_xticks(x,xlabels)
         ax_speedup_bar.set_ylabel('speedup')
         ax_speedup_bar.set_ylim(0.85,1.15)
         ax_speedup_bar.yaxis.set_major_locator(ticker.MultipleLocator(0.05))
@@ -99,8 +107,14 @@ if __name__ == '__main__':
         ax_missrate_bar = ax[fx,fy+2]
         nopart_missrate_iter = map(lambda x: np.average(size_dict[x]['nopart'][f'l3.demand_miss_rate::.cpu{i}']) ,sorted_size)
         max_missrate_iter = map(lambda x: np.average(way_stat_maxipc_size_dict[x][1][f'l3.demand_miss_rate::.cpu{i}']) ,sorted_size)
-        rect4 = ax_missrate_bar.bar(x-width/2, list(nopart_missrate_iter) , width, label='native mix miss rate')
-        rect5 = ax_missrate_bar.bar(x+width/2, list(max_missrate_iter), width, label='miss rate when core0 reach max')
+        nopart_missrate_list = list(nopart_missrate_iter)
+        max_missrate_list = list(max_missrate_iter)
+        print(f'print core{i} nopart missrate:')
+        print(nopart_missrate_list)
+        print(f'print core{i} max0 missrate:')
+        print(max_missrate_list)
+        rect4 = ax_missrate_bar.bar(x-width/2, nopart_missrate_list , width, label='native mix miss rate')
+        rect5 = ax_missrate_bar.bar(x+width/2, max_missrate_list, width, label='miss rate when core0 reach max')
         ax_missrate_bar.set_xticks(x,xlabels)
         ax_missrate_bar.set_ylabel('average miss rate')
         ax_missrate_bar.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, decimals=0))

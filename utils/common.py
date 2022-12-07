@@ -617,8 +617,8 @@ def scale_tick(df: pd.DataFrame):
 
 def get_spec_ref_time(bmk, ver):
     if ver == '06':
-        top = "/home/zyy/research-data/spec2006/benchspec/CPU2006"
-        ref_file = "/home/zyy/research-data/spec2006/benchspec/CPU2006/{}/data/ref/reftime"
+        top = "/nfs-nvme/home/share/cpu2006v99/benchspec/CPU2006"
+        ref_file = "/nfs-nvme/home/share/cpu2006v99/benchspec/CPU2006/{}/data/ref/reftime"
     else:
         assert ver == '17'
         top = "/nfs-nvme/home/share/spec2017_slim/benchspec/CPU"
@@ -752,6 +752,64 @@ def extract_samples_raw_json(base_dir,ncores=4,last_nsamples = 4,target=t.llc_ne
             one_dict[f'l3.demand_miss_rate::.cpu{i}'] = demand_misses_rate.tolist()
             one_dict[f'l3.demand_misses::.cpu{i}'] = demand_misses.tolist()
             one_dict[f'l3.demand_hits::.cpu{i}'] = demand_hits.tolist()
+            one_dict[f'l3_mpki_cpu{i}'] = (demand_misses/np.array(one_dict[f'cpu{i}.committedInsts'])  * 1000).tolist()
+    for k in extra_keys:
+        one_dict.pop(k)
+    with open(st_filter_file, 'w') as testfile:
+        json.dump(one_dict, testfile, indent=4)
+    return one_dict
+
+def extract_newgem_raw_json(base_dir,ncores,last_nsamples = 1,target=t.llc_targets_newgem):
+    st_file = os.path.join(base_dir,"stats.txt")
+    st_filter_file = os.path.join(base_dir,f"{last_nsamples}period.json")
+    target_keys = []
+    if ncores > 1:
+        target_keys.extend([f'cpu{i}.ipc' for i in range(ncores)])
+        target_keys.extend([f'cpu{i}.numCycles' for i in range(ncores)])
+        target_keys.extend([f'cpu{i}.committedInsts' for i in range(ncores)])
+        extra_keys = []
+        extra_keys.extend([f'l3.demandHits::cpu{i}.mmu.dtb' for i in range(ncores)])
+        extra_keys.extend([f'l3.demandHits::cpu{i}.mmu.itb' for i in range(ncores)])
+        extra_keys.extend([f'l3.demandHits::cpu{i}.inst' for i in range(ncores)])
+        extra_keys.extend([f'l3.demandHits::cpu{i}.data' for i in range(ncores)])
+        extra_keys.extend([f'l3.demandHits::l2{i}.prefetcher' for i in range(ncores)])
+        extra_keys.extend([f'l3.demandMisses::cpu{i}.mmu.dtb' for i in range(ncores)])
+        extra_keys.extend([f'l3.demandMisses::cpu{i}.mmu.itb' for i in range(ncores)])
+        extra_keys.extend([f'l3.demandMisses::cpu{i}.inst' for i in range(ncores)])
+        extra_keys.extend([f'l3.demandMisses::cpu{i}.data' for i in range(ncores)])
+        extra_keys.extend([f'l3.demandMisses::l2{i}.prefetcher' for i in range(ncores)])
+    else:
+        target_keys.append(f'cpu.ipc')
+        target_keys.append(f'cpu.numCycles')
+        target_keys.append(f'cpu.committedInsts')
+        extra_keys = []
+        extra_keys.append(f'l3.demandHits::cpu.mmu.dtb')
+        extra_keys.append(f'l3.demandHits::cpu.mmu.itb')
+        extra_keys.append(f'l3.demandHits::cpu.inst')
+        extra_keys.append(f'l3.demandHits::cpu.data')
+        extra_keys.append(f'l3.demandHits::l2.prefetcher')
+        extra_keys.append(f'l3.demandMisses::cpu.mmu.dtb')
+        extra_keys.append(f'l3.demandMisses::cpu.mmu.itb')
+        extra_keys.append(f'l3.demandMisses::cpu.inst')
+        extra_keys.append(f'l3.demandMisses::cpu.data')
+        extra_keys.append(f'l3.demandMisses::l2.prefetcher')
+    target_keys.extend(extra_keys)
+    target_keys.extend(['l3.demandMissRate','l3.demandHits','l3.demandMisses'])
+    stats_get_func = multi_stats_lastn_factory(target, target_keys,last_n=last_nsamples)
+    one_dict = stats_get_func(st_file)
+    if ncores > 1:
+        for i in range(ncores):
+            hit_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demandHits' in x, one_dict.keys())
+            demandHits = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], hit_iter))
+            miss_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demandMisses' in x, one_dict.keys())
+            demandMisses = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], miss_iter))
+            demandMissesRate = demandMisses / (demandHits + demandMisses)
+            one_dict[f'l3.demandMissRate::cpu{i}'] = demandMissesRate.tolist()
+            one_dict[f'l3.demandMisses::cpu{i}'] = demandMisses.tolist()
+            one_dict[f'l3.demandHits::cpu{i}'] = demandHits.tolist()
+            one_dict[f'l3_mpki_cpu{i}'] = (demandMisses/np.array(one_dict[f'cpu{i}.committedInsts'])  * 1000).tolist()
+    for k in extra_keys:
+        one_dict.pop(k)
     with open(st_filter_file, 'w') as testfile:
         json.dump(one_dict, testfile, indent=4)
     return one_dict

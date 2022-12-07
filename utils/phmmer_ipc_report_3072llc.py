@@ -61,6 +61,7 @@ def report_hmmer(base_dir,last_nsamples = 4):
         parts_dict[ways[1]] = partsname
     sorted_keys = sorted(list(filter(lambda x: x.startswith('0'), parts_dict.keys())), key=lambda x: int(x, base=16),reverse=True)
     # sorted_keys.insert(0,'nopart')
+    print(sorted_keys)
     xvals = np.arange(0,4,1)
     for i in range(4):
         fy = i % 2
@@ -70,11 +71,11 @@ def report_hmmer(base_dir,last_nsamples = 4):
         ax[fx,fy].set_ylabel('IPC speedup')
         ax[fx,fy].set_ylim(0.85,1.15)
         ax[fx,fy].yaxis.set_major_locator(ticker.MultipleLocator(0.05))
-        for ci,k in enumerate(sorted_keys[:8]):
+        for ci,k in enumerate(sorted_keys[:10]):
             sample_ipc = np.array(s_dicts[k][f'cpu{i}.ipc'])
             nopart_ipc = np.array(s_dicts['nopart'][f'cpu{i}.ipc'])
             speedup = sample_ipc/nopart_ipc
-            ax[fx,fy].plot(xvals,speedup,label=f'LC waymask={k}',linewidth=2,color=mycolor[ci])
+            ax[fx,fy].plot(xvals,speedup,label=f'LC waymask={k}',linewidth=2,color=mycolor[ci%len(mycolor)])
         ax[fx,fy].set_title(f'cpu{i}')
     ax[0,1].legend(loc='upper right',ncol=1,fontsize=10,bbox_to_anchor=(1.01,1.01))
     plt.savefig(f'3mllc_speedup.png',dpi=300)

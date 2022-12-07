@@ -90,7 +90,7 @@ ENV/
 
 stat
 *.sh
-cache_*
+# cache_*
 /fig_data
 *.csv
 *.png

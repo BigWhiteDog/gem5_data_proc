@@ -1,0 +1,842 @@
+{
+    "hmmer0-hmmer1-hmmer2-hmmer_o30": {
+        "cpu0.ipc": 1.5867173375,
+        "cpu1.ipc": 1.5918961499999997,
+        "cpu2.ipc": 1.5848888999999997,
+        "cpu3.ipc": 1.563079025,
+        "total_miss_rate": 0.801227125556768
+    },
+    "hmmer0-hmmer1-hmmer2-hmmer_o31": {
+        "cpu0.ipc": 1.5914234625000003,
+        "cpu1.ipc": 1.59895165,
+        "cpu2.ipc": 1.5856345250000001,
+        "cpu3.ipc": 1.5254742749999999,
+        "total_miss_rate": 0.7616894991390549
+    },
+    "hmmer0-hmmer1-hmmer_o30-hmmer2": {
+        "cpu0.ipc": 1.6038411500000003,
+        "cpu1.ipc": 1.5927420875,
+        "cpu2.ipc": 1.5784464,
+        "cpu3.ipc": 1.5757827125,
+        "total_miss_rate": 0.7973701910442177
+    },
+    "hmmer0-hmmer1-hmmer_o30-hmmer_o31": {
+        "cpu0.ipc": 1.6109073375,
+        "cpu1.ipc": 1.6013720875000002,
+        "cpu2.ipc": 1.5646095875000001,
+        "cpu3.ipc": 1.52700584375,
+        "total_miss_rate": 0.7366996201815587
+    },
+    "hmmer0-hmmer1-hmmer_o31-hmmer2": {
+        "cpu0.ipc": 1.594490025,
+        "cpu1.ipc": 1.5996699625000002,
+        "cpu2.ipc": 1.51868026875,
+        "cpu3.ipc": 1.5809562125,
+        "total_miss_rate": 0.7597631448799462
+    },
+    "hmmer0-hmmer1-hmmer_o31-hmmer_o30": {
+        "cpu0.ipc": 1.6036685875000003,
+        "cpu1.ipc": 1.6078124625,
+        "cpu2.ipc": 1.5410970875,
+        "cpu3.ipc": 1.58139565,
+        "total_miss_rate": 0.7416954723688559
+    },
+    "hmmer0-hmmer2-hmmer1-hmmer_o30": {
+        "cpu0.ipc": 1.6073755875,
+        "cpu1.ipc": 1.5835412125,
+        "cpu2.ipc": 1.6142559624999997,
+        "cpu3.ipc": 1.58311484375,
+        "total_miss_rate": 0.7807400648464768
+    },
+    "hmmer0-hmmer2-hmmer1-hmmer_o31": {
+        "cpu0.ipc": 1.60587765,
+        "cpu1.ipc": 1.5953559625,
+        "cpu2.ipc": 1.609827025,
+        "cpu3.ipc": 1.54130428125,
+        "total_miss_rate": 0.7444320294661902
+    },
+    "hmmer0-hmmer2-hmmer_o30-hmmer1": {
+        "cpu0.ipc": 1.6028167125,
+        "cpu1.ipc": 1.590386775,
+        "cpu2.ipc": 1.5755284625000001,
+        "cpu3.ipc": 1.6056178374999999,
+        "total_miss_rate": 0.7850202321371526
+    },
+    "hmmer0-hmmer2-hmmer_o30-hmmer_o31": {
+        "cpu0.ipc": 1.6107154625,
+        "cpu1.ipc": 1.5808790875,
+        "cpu2.ipc": 1.57526190625,
+        "cpu3.ipc": 1.5382598437500001,
+        "total_miss_rate": 0.8087559060808919
+    },
+    "hmmer0-hmmer2-hmmer_o31-hmmer1": {
+        "cpu0.ipc": 1.6118563375000001,
+        "cpu1.ipc": 1.5906182125,
+        "cpu2.ipc": 1.5269917124999999,
+        "cpu3.ipc": 1.6139196499999997,
+        "total_miss_rate": 0.7414370844532465
+    },
+    "hmmer0-hmmer2-hmmer_o31-hmmer_o30": {
+        "cpu0.ipc": 1.61281151875,
+        "cpu1.ipc": 1.5833589625,
+        "cpu2.ipc": 1.54237140625,
+        "cpu3.ipc": 1.56962846875,
+        "total_miss_rate": 0.8094528576201699
+    },
+    "hmmer0-hmmer_o30-hmmer1-hmmer2": {
+        "cpu0.ipc": 1.6020057125,
+        "cpu1.ipc": 1.57252740625,
+        "cpu2.ipc": 1.6035391500000002,
+        "cpu3.ipc": 1.5921495250000002,
+        "total_miss_rate": 0.7827027363128839
+    },
+    "hmmer0-hmmer_o30-hmmer1-hmmer_o31": {
+        "cpu0.ipc": 1.6208717125,
+        "cpu1.ipc": 1.5799173999999998,
+        "cpu2.ipc": 1.6029085875,
+        "cpu3.ipc": 1.5354288437499999,
+        "total_miss_rate": 0.7305255261289502
+    },
+    "hmmer0-hmmer_o30-hmmer2-hmmer1": {
+        "cpu0.ipc": 1.59791025,
+        "cpu1.ipc": 1.5711053750000001,
+        "cpu2.ipc": 1.5873105625,
+        "cpu3.ipc": 1.5937744375,
+        "total_miss_rate": 0.7863034319357971
+    },
+    "hmmer0-hmmer_o30-hmmer2-hmmer_o31": {
+        "cpu0.ipc": 1.6229432125000003,
+        "cpu1.ipc": 1.568663025,
+        "cpu2.ipc": 1.5918932749999999,
+        "cpu3.ipc": 1.5377868437499997,
+        "total_miss_rate": 0.8182950044659371
+    },
+    "hmmer0-hmmer_o30-hmmer_o31-hmmer1": {
+        "cpu0.ipc": 1.6184228375,
+        "cpu1.ipc": 1.577807775,
+        "cpu2.ipc": 1.53851459375,
+        "cpu3.ipc": 1.6232484625,
+        "total_miss_rate": 0.7255957949129137
+    },
+    "hmmer0-hmmer_o30-hmmer_o31-hmmer2": {
+        "cpu0.ipc": 1.61538333125,
+        "cpu1.ipc": 1.57682909375,
+        "cpu2.ipc": 1.5332279125,
+        "cpu3.ipc": 1.5896635875,
+        "total_miss_rate": 0.8207149015306422
+    },
+    "hmmer0-hmmer_o31-hmmer1-hmmer2": {
+        "cpu0.ipc": 1.6068777124999998,
+        "cpu1.ipc": 1.5326222,
+        "cpu2.ipc": 1.6023323374999996,
+        "cpu3.ipc": 1.59253139375,
+        "total_miss_rate": 0.7514015960037908
+    },
+    "hmmer0-hmmer_o31-hmmer1-hmmer_o30": {
+        "cpu0.ipc": 1.6176025250000001,
+        "cpu1.ipc": 1.55162913125,
+        "cpu2.ipc": 1.62377915,
+        "cpu3.ipc": 1.5764219625,
+        "total_miss_rate": 0.7281060285974783
+    },
+    "hmmer0-hmmer_o31-hmmer2-hmmer1": {
+        "cpu0.ipc": 1.6056182749999999,
+        "cpu1.ipc": 1.54399696875,
+        "cpu2.ipc": 1.5906243375,
+        "cpu3.ipc": 1.6054751500000002,
+        "total_miss_rate": 0.7483689021694927
+    },
+    "hmmer0-hmmer_o31-hmmer2-hmmer_o30": {
+        "cpu0.ipc": 1.6089298999999997,
+        "cpu1.ipc": 1.5320645250000002,
+        "cpu2.ipc": 1.5879684,
+        "cpu3.ipc": 1.5729810312499999,
+        "total_miss_rate": 0.8248897931502204
+    },
+    "hmmer0-hmmer_o31-hmmer_o30-hmmer1": {
+        "cpu0.ipc": 1.6124792124999998,
+        "cpu1.ipc": 1.53579009375,
+        "cpu2.ipc": 1.5871057125,
+        "cpu3.ipc": 1.617552775,
+        "total_miss_rate": 0.7323292653574263
+    },
+    "hmmer0-hmmer_o31-hmmer_o30-hmmer2": {
+        "cpu0.ipc": 1.60989363125,
+        "cpu1.ipc": 1.52347228125,
+        "cpu2.ipc": 1.575310275,
+        "cpu3.ipc": 1.5911470875,
+        "total_miss_rate": 0.823057088573238
+    },
+    "hmmer1-hmmer0-hmmer2-hmmer_o30": {
+        "cpu0.ipc": 1.5943850874999999,
+        "cpu1.ipc": 1.5953709624999999,
+        "cpu2.ipc": 1.5952160249999998,
+        "cpu3.ipc": 1.572052025,
+        "total_miss_rate": 0.8000925271019889
+    },
+    "hmmer1-hmmer0-hmmer2-hmmer_o31": {
+        "cpu0.ipc": 1.5985646875000001,
+        "cpu1.ipc": 1.5983773312500003,
+        "cpu2.ipc": 1.590586025,
+        "cpu3.ipc": 1.54163034375,
+        "total_miss_rate": 0.762699918436824
+    },
+    "hmmer1-hmmer0-hmmer_o30-hmmer2": {
+        "cpu0.ipc": 1.5955617125,
+        "cpu1.ipc": 1.6033429562500001,
+        "cpu2.ipc": 1.5765838374999999,
+        "cpu3.ipc": 1.5972069625,
+        "total_miss_rate": 0.7974441859225974
+    },
+    "hmmer1-hmmer0-hmmer_o30-hmmer_o31": {
+        "cpu0.ipc": 1.600604775,
+        "cpu1.ipc": 1.6103447750000002,
+        "cpu2.ipc": 1.5828522125,
+        "cpu3.ipc": 1.5446344,
+        "total_miss_rate": 0.739991782632773
+    },
+    "hmmer1-hmmer0-hmmer_o31-hmmer2": {
+        "cpu0.ipc": 1.599680775,
+        "cpu1.ipc": 1.5991216375000001,
+        "cpu2.ipc": 1.5391284625000001,
+        "cpu3.ipc": 1.5835163374999999,
+        "total_miss_rate": 0.7602534577548222
+    },
+    "hmmer1-hmmer0-hmmer_o31-hmmer_o30": {
+        "cpu0.ipc": 1.6145793375,
+        "cpu1.ipc": 1.6028269625,
+        "cpu2.ipc": 1.5344155875,
+        "cpu3.ipc": 1.5749411500000001,
+        "total_miss_rate": 0.7341016937023968
+    },
+    "hmmer1-hmmer2-hmmer0-hmmer_o30": {
+        "cpu0.ipc": 1.6080450875,
+        "cpu1.ipc": 1.5872290312500001,
+        "cpu2.ipc": 1.6053580812500001,
+        "cpu3.ipc": 1.5714749625,
+        "total_miss_rate": 0.7810462303304703
+    },
+    "hmmer1-hmmer2-hmmer0-hmmer_o31": {
+        "cpu0.ipc": 1.5979365875,
+        "cpu1.ipc": 1.5942528999999999,
+        "cpu2.ipc": 1.6129322062500002,
+        "cpu3.ipc": 1.54708115,
+        "total_miss_rate": 0.7538706186363937
+    },
+    "hmmer1-hmmer2-hmmer_o30-hmmer0": {
+        "cpu0.ipc": 1.6016487750000004,
+        "cpu1.ipc": 1.58576865,
+        "cpu2.ipc": 1.58317515,
+        "cpu3.ipc": 1.5953150812500003,
+        "total_miss_rate": 0.785136894683749
+    },
+    "hmmer1-hmmer2-hmmer_o30-hmmer_o31": {
+        "cpu0.ipc": 1.6072038999999996,
+        "cpu1.ipc": 1.591894275,
+        "cpu2.ipc": 1.5645113375,
+        "cpu3.ipc": 1.53802015,
+        "total_miss_rate": 0.8276463150289017
+    },
+    "hmmer1-hmmer2-hmmer_o31-hmmer0": {
+        "cpu0.ipc": 1.6131642750000001,
+        "cpu1.ipc": 1.592532025,
+        "cpu2.ipc": 1.541329525,
+        "cpu3.ipc": 1.6105974562500003,
+        "total_miss_rate": 0.7465163599768714
+    },
+    "hmmer1-hmmer2-hmmer_o31-hmmer_o30": {
+        "cpu0.ipc": 1.6044331562499998,
+        "cpu1.ipc": 1.5924403374999998,
+        "cpu2.ipc": 1.5321130875000002,
+        "cpu3.ipc": 1.580561025,
+        "total_miss_rate": 0.8329416858731784
+    },
+    "hmmer1-hmmer_o30-hmmer0-hmmer2": {
+        "cpu0.ipc": 1.6036766500000001,
+        "cpu1.ipc": 1.580503525,
+        "cpu2.ipc": 1.60085895625,
+        "cpu3.ipc": 1.5858978375000001,
+        "total_miss_rate": 0.7822151555796374
+    },
+    "hmmer1-hmmer_o30-hmmer0-hmmer_o31": {
+        "cpu0.ipc": 1.6170695875,
+        "cpu1.ipc": 1.5720578374999998,
+        "cpu2.ipc": 1.61560865,
+        "cpu3.ipc": 1.53926246875,
+        "total_miss_rate": 0.7265213353099826
+    },
+    "hmmer1-hmmer_o30-hmmer2-hmmer0": {
+        "cpu0.ipc": 1.6129207125,
+        "cpu1.ipc": 1.5752662812499998,
+        "cpu2.ipc": 1.5935153375,
+        "cpu3.ipc": 1.5964751499999998,
+        "total_miss_rate": 0.784770091998687
+    },
+    "hmmer1-hmmer_o30-hmmer2-hmmer_o31": {
+        "cpu0.ipc": 1.5963107124999998,
+        "cpu1.ipc": 1.5827769624999999,
+        "cpu2.ipc": 1.5920984000000002,
+        "cpu3.ipc": 1.5425922,
+        "total_miss_rate": 0.839048667575104
+    },
+    "hmmer1-hmmer_o30-hmmer_o31-hmmer0": {
+        "cpu0.ipc": 1.6179185875000002,
+        "cpu1.ipc": 1.583325275,
+        "cpu2.ipc": 1.55484446875,
+        "cpu3.ipc": 1.6154045250000002,
+        "total_miss_rate": 0.7300805849076742
+    },
+    "hmmer1-hmmer_o30-hmmer_o31-hmmer2": {
+        "cpu0.ipc": 1.608349025,
+        "cpu1.ipc": 1.5820198375,
+        "cpu2.ipc": 1.52439503125,
+        "cpu3.ipc": 1.5891125875,
+        "total_miss_rate": 0.830901985588109
+    },
+    "hmmer1-hmmer_o31-hmmer0-hmmer2": {
+        "cpu0.ipc": 1.6214458375,
+        "cpu1.ipc": 1.53510411875,
+        "cpu2.ipc": 1.6055817062499997,
+        "cpu3.ipc": 1.5921669,
+        "total_miss_rate": 0.7409727372249886
+    },
+    "hmmer1-hmmer_o31-hmmer0-hmmer_o30": {
+        "cpu0.ipc": 1.610744275,
+        "cpu1.ipc": 1.5529119,
+        "cpu2.ipc": 1.61491970625,
+        "cpu3.ipc": 1.5788069,
+        "total_miss_rate": 0.7250159276106802
+    },
+    "hmmer1-hmmer_o31-hmmer2-hmmer0": {
+        "cpu0.ipc": 1.6031535249999997,
+        "cpu1.ipc": 1.54602759375,
+        "cpu2.ipc": 1.5873259000000002,
+        "cpu3.ipc": 1.60811558125,
+        "total_miss_rate": 0.7427822334621405
+    },
+    "hmmer1-hmmer_o31-hmmer2-hmmer_o30": {
+        "cpu0.ipc": 1.6117373999999998,
+        "cpu1.ipc": 1.53526714375,
+        "cpu2.ipc": 1.5824348375,
+        "cpu3.ipc": 1.5649912125,
+        "total_miss_rate": 0.8320021347420219
+    },
+    "hmmer1-hmmer_o31-hmmer_o30-hmmer0": {
+        "cpu0.ipc": 1.6176547124999998,
+        "cpu1.ipc": 1.5484759000000001,
+        "cpu2.ipc": 1.568729525,
+        "cpu3.ipc": 1.6160361437500002,
+        "total_miss_rate": 0.7260819537605252
+    },
+    "hmmer1-hmmer_o31-hmmer_o30-hmmer2": {
+        "cpu0.ipc": 1.6148505625000003,
+        "cpu1.ipc": 1.529035725,
+        "cpu2.ipc": 1.5876770624999998,
+        "cpu3.ipc": 1.5832623749999999,
+        "total_miss_rate": 0.8326958467145383
+    },
+    "hmmer2-hmmer0-hmmer1-hmmer_o30": {
+        "cpu0.ipc": 1.590527525,
+        "cpu1.ipc": 1.6064103312500002,
+        "cpu2.ipc": 1.6041646125,
+        "cpu3.ipc": 1.5707544687500001,
+        "total_miss_rate": 0.7816086850343006
+    },
+    "hmmer2-hmmer0-hmmer1-hmmer_o31": {
+        "cpu0.ipc": 1.5954747,
+        "cpu1.ipc": 1.60639631875,
+        "cpu2.ipc": 1.5982909375,
+        "cpu3.ipc": 1.5441656875,
+        "total_miss_rate": 0.7507250477470467
+    },
+    "hmmer2-hmmer0-hmmer_o30-hmmer1": {
+        "cpu0.ipc": 1.5826526499999998,
+        "cpu1.ipc": 1.6038489499999997,
+        "cpu2.ipc": 1.5701489125,
+        "cpu3.ipc": 1.6072059375000003,
+        "total_miss_rate": 0.7812683317038486
+    },
+    "hmmer2-hmmer0-hmmer_o30-hmmer_o31": {
+        "cpu0.ipc": 1.5926140874999999,
+        "cpu1.ipc": 1.6088220249999998,
+        "cpu2.ipc": 1.5552484625,
+        "cpu3.ipc": 1.5311988875,
+        "total_miss_rate": 0.8171384296116395
+    },
+    "hmmer2-hmmer0-hmmer_o31-hmmer1": {
+        "cpu0.ipc": 1.5873707562500001,
+        "cpu1.ipc": 1.612446225,
+        "cpu2.ipc": 1.532124625,
+        "cpu3.ipc": 1.61771339375,
+        "total_miss_rate": 0.7398726238428379
+    },
+    "hmmer2-hmmer0-hmmer_o31-hmmer_o30": {
+        "cpu0.ipc": 1.5792728375,
+        "cpu1.ipc": 1.6171837125,
+        "cpu2.ipc": 1.5263043374999998,
+        "cpu3.ipc": 1.58000265,
+        "total_miss_rate": 0.8164820758555219
+    },
+    "hmmer2-hmmer1-hmmer0-hmmer_o30": {
+        "cpu0.ipc": 1.59481195,
+        "cpu1.ipc": 1.6064192124999999,
+        "cpu2.ipc": 1.6015156999999998,
+        "cpu3.ipc": 1.5781139375,
+        "total_miss_rate": 0.7860458517510297
+    },
+    "hmmer2-hmmer1-hmmer0-hmmer_o31": {
+        "cpu0.ipc": 1.5843038875,
+        "cpu1.ipc": 1.5994869375,
+        "cpu2.ipc": 1.5993774625000001,
+        "cpu3.ipc": 1.5302378749999999,
+        "total_miss_rate": 0.7494105265962407
+    },
+    "hmmer2-hmmer1-hmmer_o30-hmmer0": {
+        "cpu0.ipc": 1.58335615625,
+        "cpu1.ipc": 1.6059514687499998,
+        "cpu2.ipc": 1.56604159375,
+        "cpu3.ipc": 1.6066849625000004,
+        "total_miss_rate": 0.7826593450568018
+    },
+    "hmmer2-hmmer1-hmmer_o30-hmmer_o31": {
+        "cpu0.ipc": 1.5905480625,
+        "cpu1.ipc": 1.6108425,
+        "cpu2.ipc": 1.5730555000000002,
+        "cpu3.ipc": 1.5462380625,
+        "total_miss_rate": 0.8275487825198035
+    },
+    "hmmer2-hmmer1-hmmer_o31-hmmer0": {
+        "cpu0.ipc": 1.5881707749999998,
+        "cpu1.ipc": 1.6104855875,
+        "cpu2.ipc": 1.52432309375,
+        "cpu3.ipc": 1.6005427062499997,
+        "total_miss_rate": 0.7460927627991115
+    },
+    "hmmer2-hmmer1-hmmer_o31-hmmer_o30": {
+        "cpu0.ipc": 1.592333275,
+        "cpu1.ipc": 1.6058485875,
+        "cpu2.ipc": 1.53671940625,
+        "cpu3.ipc": 1.575340775,
+        "total_miss_rate": 0.8277773018113279
+    },
+    "hmmer2-hmmer_o30-hmmer0-hmmer1": {
+        "cpu0.ipc": 1.59076634375,
+        "cpu1.ipc": 1.5598823124999999,
+        "cpu2.ipc": 1.59830939375,
+        "cpu3.ipc": 1.5942121375,
+        "total_miss_rate": 0.8013713898474351
+    },
+    "hmmer2-hmmer_o30-hmmer0-hmmer_o31": {
+        "cpu0.ipc": 1.58644815,
+        "cpu1.ipc": 1.573048275,
+        "cpu2.ipc": 1.6031858374999999,
+        "cpu3.ipc": 1.52489211875,
+        "total_miss_rate": 0.8268207568547473
+    },
+    "hmmer2-hmmer_o30-hmmer1-hmmer0": {
+        "cpu0.ipc": 1.5922398375,
+        "cpu1.ipc": 1.5680488499999998,
+        "cpu2.ipc": 1.5892968875000002,
+        "cpu3.ipc": 1.5991742625,
+        "total_miss_rate": 0.797189372174339
+    },
+    "hmmer2-hmmer_o30-hmmer1-hmmer_o31": {
+        "cpu0.ipc": 1.5850727125000001,
+        "cpu1.ipc": 1.57011195,
+        "cpu2.ipc": 1.6060326500000002,
+        "cpu3.ipc": 1.5216604,
+        "total_miss_rate": 0.8296898508166114
+    },
+    "hmmer2-hmmer_o30-hmmer_o31-hmmer0": {
+        "cpu0.ipc": 1.5838195249999998,
+        "cpu1.ipc": 1.5660009,
+        "cpu2.ipc": 1.52258665,
+        "cpu3.ipc": 1.6180863375,
+        "total_miss_rate": 0.8269059962296984
+    },
+    "hmmer2-hmmer_o30-hmmer_o31-hmmer1": {
+        "cpu0.ipc": 1.590180125,
+        "cpu1.ipc": 1.5634933375000002,
+        "cpu2.ipc": 1.53170345,
+        "cpu3.ipc": 1.5986439000000001,
+        "total_miss_rate": 0.8328832665784657
+    },
+    "hmmer2-hmmer_o31-hmmer0-hmmer1": {
+        "cpu0.ipc": 1.5993567124999999,
+        "cpu1.ipc": 1.54916816875,
+        "cpu2.ipc": 1.60482551875,
+        "cpu3.ipc": 1.6040090875000002,
+        "total_miss_rate": 0.7635591499430529
+    },
+    "hmmer2-hmmer_o31-hmmer0-hmmer_o30": {
+        "cpu0.ipc": 1.5954855250000002,
+        "cpu1.ipc": 1.52973965,
+        "cpu2.ipc": 1.6198639624999998,
+        "cpu3.ipc": 1.5732947124999999,
+        "total_miss_rate": 0.8219871661808107
+    },
+    "hmmer2-hmmer_o31-hmmer1-hmmer0": {
+        "cpu0.ipc": 1.5954065312499999,
+        "cpu1.ipc": 1.538609575,
+        "cpu2.ipc": 1.5995460875,
+        "cpu3.ipc": 1.6056243937499999,
+        "total_miss_rate": 0.7607636230042979
+    },
+    "hmmer2-hmmer_o31-hmmer1-hmmer_o30": {
+        "cpu0.ipc": 1.5944432750000002,
+        "cpu1.ipc": 1.5426287749999998,
+        "cpu2.ipc": 1.6031974625,
+        "cpu3.ipc": 1.5852346499999999,
+        "total_miss_rate": 0.8392607806574242
+    },
+    "hmmer2-hmmer_o31-hmmer_o30-hmmer0": {
+        "cpu0.ipc": 1.5922759625,
+        "cpu1.ipc": 1.53929771875,
+        "cpu2.ipc": 1.56911596875,
+        "cpu3.ipc": 1.6226720874999998,
+        "total_miss_rate": 0.8191985929149661
+    },
+    "hmmer2-hmmer_o31-hmmer_o30-hmmer1": {
+        "cpu0.ipc": 1.590523275,
+        "cpu1.ipc": 1.5372825875,
+        "cpu2.ipc": 1.57038021875,
+        "cpu3.ipc": 1.6077293874999998,
+        "total_miss_rate": 0.8289456456470015
+    },
+    "hmmer_o30-hmmer0-hmmer1-hmmer2": {
+        "cpu0.ipc": 1.5801425625,
+        "cpu1.ipc": 1.5998701875,
+        "cpu2.ipc": 1.591865125,
+        "cpu3.ipc": 1.5817881875000002,
+        "total_miss_rate": 0.7880826247607177
+    },
+    "hmmer_o30-hmmer0-hmmer1-hmmer_o31": {
+        "cpu0.ipc": 1.5771829375,
+        "cpu1.ipc": 1.60605616875,
+        "cpu2.ipc": 1.6291521875000001,
+        "cpu3.ipc": 1.5482841375,
+        "total_miss_rate": 0.7238841194072385
+    },
+    "hmmer_o30-hmmer0-hmmer2-hmmer1": {
+        "cpu0.ipc": 1.575211125,
+        "cpu1.ipc": 1.5949405625,
+        "cpu2.ipc": 1.58887625,
+        "cpu3.ipc": 1.5924190625,
+        "total_miss_rate": 0.789197636676922
+    },
+    "hmmer_o30-hmmer0-hmmer2-hmmer_o31": {
+        "cpu0.ipc": 1.5815163937499999,
+        "cpu1.ipc": 1.6221591874999999,
+        "cpu2.ipc": 1.5887763125,
+        "cpu3.ipc": 1.53703675,
+        "total_miss_rate": 0.8181486371399089
+    },
+    "hmmer_o30-hmmer0-hmmer_o31-hmmer1": {
+        "cpu0.ipc": 1.5934806875,
+        "cpu1.ipc": 1.60737025,
+        "cpu2.ipc": 1.5311315625,
+        "cpu3.ipc": 1.620812875,
+        "total_miss_rate": 0.7276845226153057
+    },
+    "hmmer_o30-hmmer0-hmmer_o31-hmmer2": {
+        "cpu0.ipc": 1.5708753125,
+        "cpu1.ipc": 1.6181304375000003,
+        "cpu2.ipc": 1.534523625,
+        "cpu3.ipc": 1.58092875,
+        "total_miss_rate": 0.8199914064090097
+    },
+    "hmmer_o30-hmmer1-hmmer0-hmmer2": {
+        "cpu0.ipc": 1.5680788125,
+        "cpu1.ipc": 1.5957386249999999,
+        "cpu2.ipc": 1.6075546250000001,
+        "cpu3.ipc": 1.582054125,
+        "total_miss_rate": 0.782912635192598
+    },
+    "hmmer_o30-hmmer1-hmmer0-hmmer_o31": {
+        "cpu0.ipc": 1.5823287499999998,
+        "cpu1.ipc": 1.6239583750000002,
+        "cpu2.ipc": 1.6077694999999999,
+        "cpu3.ipc": 1.5324628125,
+        "total_miss_rate": 0.7274975007140817
+    },
+    "hmmer_o30-hmmer1-hmmer2-hmmer0": {
+        "cpu0.ipc": 1.578151875,
+        "cpu1.ipc": 1.605519625,
+        "cpu2.ipc": 1.5907549375,
+        "cpu3.ipc": 1.6098971875,
+        "total_miss_rate": 0.7824992577295832
+    },
+    "hmmer_o30-hmmer1-hmmer2-hmmer_o31": {
+        "cpu0.ipc": 1.5650216875000003,
+        "cpu1.ipc": 1.5977720625,
+        "cpu2.ipc": 1.5905370625,
+        "cpu3.ipc": 1.5350690125,
+        "total_miss_rate": 0.8327565432456673
+    },
+    "hmmer_o30-hmmer1-hmmer_o31-hmmer0": {
+        "cpu0.ipc": 1.5774940000000002,
+        "cpu1.ipc": 1.6241382500000001,
+        "cpu2.ipc": 1.5392601875,
+        "cpu3.ipc": 1.60817725,
+        "total_miss_rate": 0.725686019126463
+    },
+    "hmmer_o30-hmmer1-hmmer_o31-hmmer2": {
+        "cpu0.ipc": 1.56660325,
+        "cpu1.ipc": 1.611301125,
+        "cpu2.ipc": 1.5327246875,
+        "cpu3.ipc": 1.5949103125000001,
+        "total_miss_rate": 0.8290363530405634
+    },
+    "hmmer_o30-hmmer2-hmmer0-hmmer1": {
+        "cpu0.ipc": 1.5704849375,
+        "cpu1.ipc": 1.5893229375,
+        "cpu2.ipc": 1.5990375625,
+        "cpu3.ipc": 1.590845125,
+        "total_miss_rate": 0.8001764367790486
+    },
+    "hmmer_o30-hmmer2-hmmer0-hmmer_o31": {
+        "cpu0.ipc": 1.5649856875000001,
+        "cpu1.ipc": 1.590022625,
+        "cpu2.ipc": 1.6152905624999998,
+        "cpu3.ipc": 1.52670295,
+        "total_miss_rate": 0.8278886625933469
+    },
+    "hmmer_o30-hmmer2-hmmer1-hmmer0": {
+        "cpu0.ipc": 1.574071625,
+        "cpu1.ipc": 1.580279375,
+        "cpu2.ipc": 1.5957819375,
+        "cpu3.ipc": 1.5926189375,
+        "total_miss_rate": 0.8010916923461129
+    },
+    "hmmer_o30-hmmer2-hmmer1-hmmer_o31": {
+        "cpu0.ipc": 1.5684134374999998,
+        "cpu1.ipc": 1.5875370625,
+        "cpu2.ipc": 1.6103075624999998,
+        "cpu3.ipc": 1.5326371250000002,
+        "total_miss_rate": 0.8309855971357015
+    },
+    "hmmer_o30-hmmer2-hmmer_o31-hmmer0": {
+        "cpu0.ipc": 1.5711559375,
+        "cpu1.ipc": 1.5880453749999999,
+        "cpu2.ipc": 1.5346104375,
+        "cpu3.ipc": 1.6094819999999999,
+        "total_miss_rate": 0.8294132815786973
+    },
+    "hmmer_o30-hmmer2-hmmer_o31-hmmer1": {
+        "cpu0.ipc": 1.5707996874999999,
+        "cpu1.ipc": 1.580154625,
+        "cpu2.ipc": 1.5279916875000001,
+        "cpu3.ipc": 1.6111153125000002,
+        "total_miss_rate": 0.8283448035582583
+    },
+    "hmmer_o30-hmmer_o31-hmmer0-hmmer1": {
+        "cpu0.ipc": 1.5700711875000002,
+        "cpu1.ipc": 1.5477391875,
+        "cpu2.ipc": 1.6083372500000004,
+        "cpu3.ipc": 1.6123410624999999,
+        "total_miss_rate": 0.7355868452322455
+    },
+    "hmmer_o30-hmmer_o31-hmmer0-hmmer2": {
+        "cpu0.ipc": 1.550987,
+        "cpu1.ipc": 1.5269855625,
+        "cpu2.ipc": 1.6104474375,
+        "cpu3.ipc": 1.5941979375000002,
+        "total_miss_rate": 0.81410154673535
+    },
+    "hmmer_o30-hmmer_o31-hmmer1-hmmer0": {
+        "cpu0.ipc": 1.5815785,
+        "cpu1.ipc": 1.5456383125,
+        "cpu2.ipc": 1.6078709375000002,
+        "cpu3.ipc": 1.6093635000000002,
+        "total_miss_rate": 0.7423028691030316
+    },
+    "hmmer_o30-hmmer_o31-hmmer1-hmmer2": {
+        "cpu0.ipc": 1.5614896249999999,
+        "cpu1.ipc": 1.5369820625,
+        "cpu2.ipc": 1.6046676874999999,
+        "cpu3.ipc": 1.5754221874999998,
+        "total_miss_rate": 0.8248613427100703
+    },
+    "hmmer_o30-hmmer_o31-hmmer2-hmmer0": {
+        "cpu0.ipc": 1.5687845625,
+        "cpu1.ipc": 1.5302460625,
+        "cpu2.ipc": 1.589083,
+        "cpu3.ipc": 1.614730125,
+        "total_miss_rate": 0.814497574998757
+    },
+    "hmmer_o30-hmmer_o31-hmmer2-hmmer1": {
+        "cpu0.ipc": 1.5632480000000002,
+        "cpu1.ipc": 1.5511380625000002,
+        "cpu2.ipc": 1.5855219999999999,
+        "cpu3.ipc": 1.5906973125000001,
+        "total_miss_rate": 0.8312858461037433
+    },
+    "hmmer_o31-hmmer0-hmmer1-hmmer2": {
+        "cpu0.ipc": 1.5351478125,
+        "cpu1.ipc": 1.602181375,
+        "cpu2.ipc": 1.59436325,
+        "cpu3.ipc": 1.58717925,
+        "total_miss_rate": 0.7515220092296769
+    },
+    "hmmer_o31-hmmer0-hmmer1-hmmer_o30": {
+        "cpu0.ipc": 1.5427530937499998,
+        "cpu1.ipc": 1.6175521437499998,
+        "cpu2.ipc": 1.6289530874999998,
+        "cpu3.ipc": 1.57739646875,
+        "total_miss_rate": 0.7225486530277941
+    },
+    "hmmer_o31-hmmer0-hmmer2-hmmer1": {
+        "cpu0.ipc": 1.5404410625,
+        "cpu1.ipc": 1.6144237499999998,
+        "cpu2.ipc": 1.5937177500000002,
+        "cpu3.ipc": 1.6038794374999998,
+        "total_miss_rate": 0.7549044721012604
+    },
+    "hmmer_o31-hmmer0-hmmer2-hmmer_o30": {
+        "cpu0.ipc": 1.5309870125,
+        "cpu1.ipc": 1.6146136249999998,
+        "cpu2.ipc": 1.59602475,
+        "cpu3.ipc": 1.5597480000000001,
+        "total_miss_rate": 0.8245498174844059
+    },
+    "hmmer_o31-hmmer0-hmmer_o30-hmmer1": {
+        "cpu0.ipc": 1.53851230625,
+        "cpu1.ipc": 1.6202040624999998,
+        "cpu2.ipc": 1.5657646875,
+        "cpu3.ipc": 1.62462925,
+        "total_miss_rate": 0.7208394316924285
+    },
+    "hmmer_o31-hmmer0-hmmer_o30-hmmer2": {
+        "cpu0.ipc": 1.5291100625,
+        "cpu1.ipc": 1.6153484374999998,
+        "cpu2.ipc": 1.5747678125,
+        "cpu3.ipc": 1.5803168125,
+        "total_miss_rate": 0.8243657854485886
+    },
+    "hmmer_o31-hmmer1-hmmer0-hmmer2": {
+        "cpu0.ipc": 1.5472363125,
+        "cpu1.ipc": 1.6006820625,
+        "cpu2.ipc": 1.6007773125,
+        "cpu3.ipc": 1.6002783749999998,
+        "total_miss_rate": 0.7522430389588588
+    },
+    "hmmer_o31-hmmer1-hmmer0-hmmer_o30": {
+        "cpu0.ipc": 1.5406692187500002,
+        "cpu1.ipc": 1.6194231875,
+        "cpu2.ipc": 1.6168286875,
+        "cpu3.ipc": 1.577521875,
+        "total_miss_rate": 0.7251441917683661
+    },
+    "hmmer_o31-hmmer1-hmmer2-hmmer0": {
+        "cpu0.ipc": 1.547249625,
+        "cpu1.ipc": 1.60425325,
+        "cpu2.ipc": 1.5884805624999998,
+        "cpu3.ipc": 1.6120801437499999,
+        "total_miss_rate": 0.7435437557980298
+    },
+    "hmmer_o31-hmmer1-hmmer2-hmmer_o30": {
+        "cpu0.ipc": 1.5290434999999998,
+        "cpu1.ipc": 1.5997675624999999,
+        "cpu2.ipc": 1.583571125,
+        "cpu3.ipc": 1.570179875,
+        "total_miss_rate": 0.8323286974835687
+    },
+    "hmmer_o31-hmmer1-hmmer_o30-hmmer0": {
+        "cpu0.ipc": 1.535021,
+        "cpu1.ipc": 1.6274149999999998,
+        "cpu2.ipc": 1.588988625,
+        "cpu3.ipc": 1.6099830625000002,
+        "total_miss_rate": 0.7257272367009079
+    },
+    "hmmer_o31-hmmer1-hmmer_o30-hmmer2": {
+        "cpu0.ipc": 1.538561,
+        "cpu1.ipc": 1.6139115,
+        "cpu2.ipc": 1.5646305625,
+        "cpu3.ipc": 1.5819018125,
+        "total_miss_rate": 0.8271189811174083
+    },
+    "hmmer_o31-hmmer2-hmmer0-hmmer1": {
+        "cpu0.ipc": 1.54143189375,
+        "cpu1.ipc": 1.5879529375,
+        "cpu2.ipc": 1.6050926875000002,
+        "cpu3.ipc": 1.6017894375000001,
+        "total_miss_rate": 0.7612716583747192
+    },
+    "hmmer_o31-hmmer2-hmmer0-hmmer_o30": {
+        "cpu0.ipc": 1.5401856875,
+        "cpu1.ipc": 1.5866859999999998,
+        "cpu2.ipc": 1.6225706250000003,
+        "cpu3.ipc": 1.573130375,
+        "total_miss_rate": 0.819842658919904
+    },
+    "hmmer_o31-hmmer2-hmmer1-hmmer0": {
+        "cpu0.ipc": 1.53877996875,
+        "cpu1.ipc": 1.5922787125,
+        "cpu2.ipc": 1.58849096875,
+        "cpu3.ipc": 1.5998289625,
+        "total_miss_rate": 0.7664035235718789
+    },
+    "hmmer_o31-hmmer2-hmmer1-hmmer_o30": {
+        "cpu0.ipc": 1.5335071875000001,
+        "cpu1.ipc": 1.592375375,
+        "cpu2.ipc": 1.6016106874999998,
+        "cpu3.ipc": 1.5615933124999999,
+        "total_miss_rate": 0.8326335575333469
+    },
+    "hmmer_o31-hmmer2-hmmer_o30-hmmer0": {
+        "cpu0.ipc": 1.5291267,
+        "cpu1.ipc": 1.5914348750000002,
+        "cpu2.ipc": 1.5826022499999999,
+        "cpu3.ipc": 1.6186385,
+        "total_miss_rate": 0.8208167096925605
+    },
+    "hmmer_o31-hmmer2-hmmer_o30-hmmer1": {
+        "cpu0.ipc": 1.5306813124999998,
+        "cpu1.ipc": 1.593452375,
+        "cpu2.ipc": 1.5689728125,
+        "cpu3.ipc": 1.5968324375,
+        "total_miss_rate": 0.8375276198065708
+    },
+    "hmmer_o31-hmmer_o30-hmmer0-hmmer1": {
+        "cpu0.ipc": 1.536397375,
+        "cpu1.ipc": 1.5701477499999998,
+        "cpu2.ipc": 1.6015085624999998,
+        "cpu3.ipc": 1.6117653125,
+        "total_miss_rate": 0.7344951605462469
+    },
+    "hmmer_o31-hmmer_o30-hmmer0-hmmer2": {
+        "cpu0.ipc": 1.53614975,
+        "cpu1.ipc": 1.5633075625,
+        "cpu2.ipc": 1.6147771249999998,
+        "cpu3.ipc": 1.5803805,
+        "total_miss_rate": 0.812056962311808
+    },
+    "hmmer_o31-hmmer_o30-hmmer1-hmmer0": {
+        "cpu0.ipc": 1.5382568125,
+        "cpu1.ipc": 1.5855156874999998,
+        "cpu2.ipc": 1.6068876250000002,
+        "cpu3.ipc": 1.602427,
+        "total_miss_rate": 0.7468408825385742
+    },
+    "hmmer_o31-hmmer_o30-hmmer1-hmmer2": {
+        "cpu0.ipc": 1.533857625,
+        "cpu1.ipc": 1.5752450625,
+        "cpu2.ipc": 1.6094037499999998,
+        "cpu3.ipc": 1.5882556875,
+        "total_miss_rate": 0.8272293137378808
+    },
+    "hmmer_o31-hmmer_o30-hmmer2-hmmer0": {
+        "cpu0.ipc": 1.533354125,
+        "cpu1.ipc": 1.57103575,
+        "cpu2.ipc": 1.590964,
+        "cpu3.ipc": 1.6150138124999998,
+        "total_miss_rate": 0.8201561032015611
+    },
+    "hmmer_o31-hmmer_o30-hmmer2-hmmer1": {
+        "cpu0.ipc": 1.5327730562500002,
+        "cpu1.ipc": 1.553352875,
+        "cpu2.ipc": 1.585855625,
+        "cpu3.ipc": 1.6140704375,
+        "total_miss_rate": 0.8194944051545878
+    }
+}

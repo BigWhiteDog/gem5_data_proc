@@ -16,6 +16,12 @@ import re
 
 simpoints17 = '/home51/zyy/expri_results/simpoints.json'
 
+simpoints_file = {
+        'hw17': 'resources/simpoint_cpt_desc/hw17.json',
+        '17': '/nfs-nvme/home/share/checkpoints_profiles/spec17_rv64gc_o2_50m/simpoint_summary.json',
+        '06': '/nfs-nvme/home/share/checkpoints_profiles/spec06_rv64gc_o2_50m/simpoint_summary.json',
+        }
+
 def gen_coverage():
     tree = u.glob_weighted_stats(
             '/home51/zyy/expri_results/omegaflow_spec17/of_g1_perf/',
@@ -55,8 +61,12 @@ def compute_weighted_cpi(ver, confs, base, simpoints, prefix, insts_file_fmt, st
         workload_dict[conf] = {}
         bmk_stat[conf] = {}
         tree = u.glob_weighted_stats(
-                file_path,
-                u.single_stat_factory(target, 'ipc', prefix),
+                file_path,None,
+                get_funcs=[
+                    lambda file_path: u.single_stat_factory(target, 'ipc', prefix)(file_path),
+                    lambda file_path: u.single_stat_factory(target, 'Insts', prefix)(file_path),
+                ],
+                stat_names=["ipc","insts"],
                 simpoints=simpoints,
                 stat_file=stat_file,
                 )
@@ -79,6 +89,7 @@ def compute_weighted_cpi(ver, confs, base, simpoints, prefix, insts_file_fmt, st
                 keys = [int(x) for x in selected]
                 keys = [x for x in keys if x in df.index]
                 df = df.loc[keys]
+                df = df.drop(df[df['insts'] < 10_000_000].index)
                 cpi, weight = u.weighted_cpi(df)
                 weights.append(weight)
 
@@ -120,22 +131,27 @@ def compute_weighted_cpi(ver, confs, base, simpoints, prefix, insts_file_fmt, st
             excluded = df[df['Coverage'] <= min_coverage]
             df = df[df['Coverage'] > min_coverage]
             print(df)
+            df.to_csv(f'{conf}_bmk_ipc.csv',sep='\t')
             print('Estimated score @ 1.5GHz:', geometric_mean(df['score']))
             print('Estimated score per GHz:', geometric_mean(df['score'])/(clock_rate/(10**9)))
             print('Excluded because of low coverage:', list(excluded.index))
 
 
     tests = []
+    conf_name = []
     for conf in confs.keys():
         if conf == base:
             continue
         rel = workload_dict[conf]['IPC']/workload_dict[base]['IPC']
         print(f'{conf}  Mean relative performance: {gmean(rel)}')
         tests.append(rel)
+        conf_name.append(conf)
     if len(tests):
         dfx = pd.concat(tests, axis=1)
+        dfx.columns = conf_name
         print('Relative performance:')
         print(dfx)
+        dfx.to_csv(f'Nanhu_bmk_ipc_rel.csv',sep='\t')
 
 def compute_best_weighted_cpi(ver, confs, base, simpoints, prefix, insts_file_fmt, stat_file,
         clock_rate, min_coverage=0.0, blacklist=[], whitelist=[], merge_benckmark=False):
@@ -280,7 +296,7 @@ def compute_best_weighted_cpi(ver, confs, base, simpoints, prefix, insts_file_fm
         print(dfx)
 
 
-def compute_weighted_llc_mpki(ver, confs, base, simpoints, prefix, insts_file_fmt, stat_file,
+def compute_weighted_llc_maki(ver, confs, base, simpoints, prefix, insts_file_fmt, stat_file,
         clock_rate, min_coverage=0.0, blacklist=[], whitelist=[], merge_benckmark=False):
     target = eval(f't.{prefix}llc_targets')
     workload_dict = {}
@@ -377,6 +393,112 @@ def compute_weighted_llc_mpki(ver, confs, base, simpoints, prefix, insts_file_fm
 
         print(conf + ' Relative MPKI:')
         print(pd.DataFrame.from_dict(bmk_rel_mpki, orient='index'))
+
+
+def compute_weighted_llc_mpki(ver, confs, base, simpoints, prefix, insts_file_fmt, stat_file,
+        clock_rate, min_coverage=0.0, blacklist=[], whitelist=[], merge_benckmark=False):
+    target = eval(f't.{prefix}llc_targets_newgem')
+    workload_dict = {}
+    bmk_stat = {}
+    for conf, file_path in confs.items():
+        workload_dict[conf] = {}
+        bmk_stat[conf] = {}
+        tree = u.glob_weighted_stats(
+                file_path,None,
+                get_funcs=[
+                    lambda file_path: u.single_stat_factory(target, 'l3.demandMisses', prefix)(file_path),
+                    lambda file_path: u.single_stat_factory(target, 'Insts', prefix)(file_path),
+                ],
+                stat_names=["llc_misses","insts"],
+                simpoints=simpoints,
+                stat_file=stat_file,
+                )
+        with open(simpoints) as jf:
+            js = json.load(jf)
+            print(js.keys())
+        times = {}
+        for bmk in tree:
+            if bmk in blacklist:
+                continue
+            if len(whitelist) and bmk not in whitelist:
+                continue
+            weights = []
+            coverage = 0
+            count = 0
+            sum_misses = 0
+            sum_access_avg = 0
+            sum_access_std = 0
+            sum_insts = 0
+            for workload, df in tree[bmk].items():
+                selected = dict(js[workload])
+                keys = [int(x) for x in selected]
+                keys = [x for x in keys if x in df.index]
+                df = df.loc[keys]
+                df = df.drop(df[df['insts'] < 10_000_000].index)
+                mpki_array = np.array(df['llc_misses']) / (np.array(df['insts']) / 1000)
+                df['llc_mpki'] = mpki_array.tolist()
+                mpki, weight = u.weighted_one_stat(df,"llc_mpki")
+                weights.append(weight)
+
+                workload_dict[conf][workload] = {}
+                workload_dict[conf][workload]['LLC_MPKI'] = mpki
+                workload_dict[conf][workload]['Coverage'] = weight
+
+                # merge multiple sub-items of a benchmark
+                if merge_benckmark:
+                    insts_file = insts_file_fmt.format(ver, workload)
+                    insts = int(get_insts(insts_file))
+                    workload_dict[conf][workload]['TotalInst'] = insts
+                    workload_dict[conf][workload]['PredictedLLCMisses'] = (insts/1000)*mpki
+                    # workload_dict[conf][workload]['Predicted STD of slice access'] = (insts/1000)*apki_dev
+                    sum_misses += (insts/1000)*mpki
+                    sum_insts += insts
+                    coverage += weight
+                    count += 1
+
+            if merge_benckmark:
+                bmk_stat[conf][bmk] = {}
+                bmk_stat[conf][bmk]['LLC_MPKI'] = sum_misses/(sum_insts/1000)
+                bmk_stat[conf][bmk]['Coverage'] = coverage/count
+
+    for conf in confs:
+        print(conf, '='*60)
+        df = pd.DataFrame.from_dict(workload_dict[conf], orient='index')
+        workload_dict[conf] = df
+        print(df)
+
+        if merge_benckmark:
+            df = pd.DataFrame.from_dict(bmk_stat[conf], orient='index')
+            excluded = df[df['Coverage'] <= min_coverage]
+            df = df[df['Coverage'] > min_coverage]
+            print(df)
+            df.to_csv(f'{conf}_bmk_mpki.csv',sep='\t')
+            print('Excluded because of low coverage:', list(excluded.index))
+
+    # tests = []
+    # conf_name = []
+    # for conf in confs.keys():
+    #     if conf == base:
+    #         continue
+    #     bmk_rel_mpki = {}
+    #     for bmk in bmk_stat[conf].keys():
+    #         bmk_rel_mpki[bmk] = bmk_stat[conf][bmk]['LLC_MPKI'] / bmk_stat[base][bmk]['LLC_MPKI']
+
+    #     print(conf + ' Relative MPKI:')
+    #     rel_pd = pd.DataFrame.from_dict(bmk_rel_mpki, orient='index')
+    #     print(rel_pd)
+    tests = []
+    conf_name = []
+    for conf in confs.keys():
+        rel = workload_dict[conf]['LLC_MPKI']
+        tests.append(rel)
+        conf_name.append(conf)
+    if len(tests):
+        dfx = pd.concat(tests, axis=1)
+        dfx.columns = conf_name
+        print('all llc mpki:')
+        print(dfx)
+        dfx.to_csv(f'Nanhu_bmk_mpki.csv',sep='\t')
 
 def compute_llc_miss_access(ver, confs, base, simpoints, prefix, insts_file_fmt, stat_file,
         clock_rate, min_coverage=0.0, blacklist=[], whitelist=[], merge_benckmark=False):
@@ -580,11 +702,49 @@ def xiangshan_spec2006():
             merge_benckmark=True,
             )
 
+def nanhu_gem5_spec(ver='06'):
+    confs = {
+            'Nanhu': f'/nfs/home/zhangchuanqi/lvna/for_xs/cacheconflict_search/nanhu_test_{ver}/NanhuConfig',
+            'Nanhu8M': f'/nfs/home/zhangchuanqi/lvna/for_xs/cacheconflict_search/nanhu_test_{ver}/Nanhu8ML3Config',
+            'Nanhu8M16ass': f'/nfs/home/zhangchuanqi/lvna/for_xs/cacheconflict_search/nanhu_test_{ver}/Nanhu8M16assL3Config',
+            }
+
+    compute_weighted_cpi(
+            ver=ver,
+            confs=confs,
+            base='Nanhu',
+            simpoints=simpoints_file[ver],
+            prefix = '',
+            stat_file='m5out/stats.txt',
+            insts_file_fmt =
+            '/nfs-nvme/home/share/checkpoints_profiles/spec{}_rv64gc_o2_50m/profiling/{}/nemu_out.txt',
+            clock_rate = 2 * 10**9,
+            min_coverage = 0.79,
+            # blacklist = ['gamess'],
+            merge_benckmark=True,
+            )
+
+    compute_weighted_llc_mpki(
+            ver=ver,
+            confs=confs,
+            base='Nanhu',
+            simpoints=simpoints_file[ver],
+            prefix = '',
+            stat_file='m5out/stats.txt',
+            insts_file_fmt =
+            '/nfs-nvme/home/share/checkpoints_profiles/spec{}_rv64gc_o2_50m/profiling/{}/nemu_out.txt',
+            clock_rate = 2 * 10**9,
+            min_coverage = 0.79,
+            # blacklist = ['gamess'],
+            merge_benckmark=True,
+            )
+
 
 if __name__ == '__main__':
     # xiangshan_spec2006()
     # gem5_spec2017()
     # gem5_spec2006()
     # gem5_spec("06")
-    gem5_spec("17")
+    # gem5_spec("17")
     # hw_gem5_spec()
+    nanhu_gem5_spec()
