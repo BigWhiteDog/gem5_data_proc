@@ -46,12 +46,12 @@ def draw_one_workload_len_est(ax,s_dicts,workload_name,full_ass,pos:tuple):
     accesslen_list = s_dicts[label_s[4]]
     sorted_setlist = sorted(zip(extra0_list,extra1_list,extra2_list,hitlen_list,accesslen_list))
     cutlen = all_set
-    for i in range(all_set-1, -1 , -1):
-        e0,e1,e2,_,_ = sorted_setlist[i]
-        if e0 != full_ass or e1 != full_ass or e2 != full_ass:
-            cutlen = i+1
-            break
-    sorted_setlist = sorted_setlist[:cutlen]
+    # for i in range(all_set-1, -1 , -1):
+    #     e0,e1,e2,_,_ = sorted_setlist[i]
+    #     if e0 != full_ass:
+    #         cutlen = i+1
+    #         break
+    # sorted_setlist = sorted_setlist[:cutlen]
     s_extra0_list,s_extra1_list,s_extra2_list,s_hitlen_list,s_accesslen_list = zip(*sorted_setlist)
     x_val = np.arange(cutlen)
     full_ass_vals = np.full(cutlen,full_ass)
@@ -62,14 +62,14 @@ def draw_one_workload_len_est(ax,s_dicts,workload_name,full_ass,pos:tuple):
     hitlen_list_color = contrasting_orange[6]
     accesslen_list_color = contrasting_orange[7]
     alpha_set = 0.8
-    ax.plot(s_extra2_list, label='min ways 2 extra miss', color = extra2_list_color,linewidth=1)
-    ax.fill_between(x_val,full_ass_vals, s_extra2_list, color = extra2_list_color, alpha=alpha_set)
-    ax.plot(s_extra1_list, label='min ways 1 extra miss', color = extra1_list_color,linewidth=1)
-    ax.fill_between(x_val, full_ass_vals, s_extra1_list, color = extra1_list_color, alpha=alpha_set)
-    ax.plot(s_extra0_list, label='min ways no extra miss', color = extra0_list_color,linewidth=1)
-    ax.fill_between(x_val, full_ass_vals, s_extra0_list, color = extra0_list_color, alpha=alpha_set)
+    # ax.plot(s_extra2_list, label='min ways 2 extra miss', color = extra2_list_color,linewidth=1)
+    # ax.fill_between(x_val,full_ass_vals, s_extra2_list, color = extra2_list_color, alpha=alpha_set)
+    # ax.plot(s_extra1_list, label='min ways 1 extra miss', color = extra1_list_color,linewidth=1)
+    # ax.fill_between(x_val, full_ass_vals, s_extra1_list, color = extra1_list_color, alpha=alpha_set)
+    # ax.plot(s_extra0_list, label='min ways no extra miss', color = extra0_list_color,linewidth=1)
+    # ax.fill_between(x_val, full_ass_vals, s_extra0_list, color = extra0_list_color, alpha=alpha_set)
     ax.plot(s_hitlen_list, label='hit len', color = hitlen_list_color,linewidth=2)
-    # ax.plot(s_accesslen_list, label='access len', color = accesslen_list_color,linewidth=2)
+    ax.plot(s_accesslen_list, label='access len', color = accesslen_list_color,linewidth=2)
 
     ax.set_ylabel('needed ways/blocks')
     # ax.set_ylim(0, 8)
@@ -181,6 +181,10 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,sc_
                     s_dicts['min_ways_1_extra_miss'][idx] = ways
                 if sum_miss <= 2:
                     s_dicts['min_ways_2_extra_miss'][idx] = ways
+                if sum_miss > 0 and ways == full_ass:
+                    #ways-1 is the last hit pos
+                    s_dicts['no_extra_miss_hit_len'][idx] = hit_len_hit_cnts[idx][ways-1]
+                    s_dicts['no_extra_miss_access_len'][idx] = hit_len_access_cnts[idx][ways-1]
         draw_one_func(ax_bar,s_dicts,work,full_ass,(fx,fy))
 
 
