@@ -44,18 +44,23 @@ def draw_one_workload_ipc(ax,s_dicts,workload_names):
     slowdown_2 = nipcs[-2]
     if (slowdown_2<0.95):
         # print(f'{workload_names} get slowdown {slowdown_2:.3} 2way')
-        fulfill5_way = 8
-        fulfill10_way = 8
-        for ipc,way in zip(nipcs,sorted_keys):
-            if ipc>0.95:
-                fulfill5_way = int(way)
-                fulfill10_way = int(way)
-            elif ipc>0.9:
-                fulfill10_way = int(way)
+        fulfill85_way = 8
+        fulfill90_way = 8
+        fulfill95_way = 8
+        for nipc,way in zip(nipcs,sorted_keys):
+            if nipc>=0.95:
+                fulfill85_way = int(way)
+                fulfill90_way = int(way)
+                fulfill95_way = int(way)
+            elif nipc>=0.9:
+                fulfill85_way = int(way)
+                fulfill90_way = int(way)
+            elif nipc>=0.85:
+                fulfill85_way = int(way)
             else:
                 # print(f'{fulfill5_way}way {ipc:.3} over 95% ipc')
                 break
-        print(f'{workload_names} {slowdown_2:.3} {fulfill5_way} {fulfill10_way}')
+        print(f'{workload_names} {slowdown_2:.3} {fulfill85_way} {fulfill90_way} {fulfill95_way}')
 
 def draw_one_workload_missrate(ax,s_dicts,workload_names):
     sorted_keys = sorted(s_dicts.keys(),key=lambda x:int(x),reverse=True)
