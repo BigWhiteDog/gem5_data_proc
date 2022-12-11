@@ -149,8 +149,8 @@ if __name__ == '__main__':
     n_works = len(worksname)
     n_rows = math.ceil(n_works/4)
     draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
-        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/set_need_90perf_dis.png')
+        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/set_dead_90perf_dis.png')
     draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
-        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/set_need_95perf_dis.png')
+        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/set_dead_95perf_dis.png')
     draw_db_by_func(base_dir,n_rows,cache_work_fullways,
-        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/set_need_dis.png')
+        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/set_dead_dis.png')
