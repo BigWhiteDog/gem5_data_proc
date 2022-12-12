@@ -113,7 +113,7 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name):
                 tag = int(tag)
                 ismiss = bool(int(ismiss))
                 if tag not in sets_miss_state[idx]:
-                    #first is last miss, second is always miss, third is dead
+                    #first is last miss, second is always miss, third means dead occur
                     sets_miss_state[idx][tag] = [ismiss,ismiss,False]
                 else:
                     last_miss = sets_miss_state[idx][tag][0]
@@ -128,7 +128,8 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name):
                 for _,(last_miss,always_miss,dead) in sets_miss_state[idx].items():
                     if always_miss:
                         s_dicts['always_dead_blocks_number'][idx] += 1
-                    elif dead:
+                    elif dead or last_miss:
+                        #dead occur or last is miss and never reused
                         s_dicts['partial_dead_blocks_number'][idx] += 1
 
             cur.close()
@@ -149,8 +150,8 @@ if __name__ == '__main__':
     n_works = len(worksname)
     n_rows = math.ceil(n_works/4)
     draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
-        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/set_dead_90perf_dis.png')
+        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/pics/set_dead_90perf_dis.png')
     draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
-        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/set_dead_95perf_dis.png')
+        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/pics/set_dead_95perf_dis.png')
     draw_db_by_func(base_dir,n_rows,cache_work_fullways,
-        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/set_dead_dis.png')
+        draw_one_func=draw_one_workload_block_need,fig_name='set_analyze/pics/set_dead_dis.png')
