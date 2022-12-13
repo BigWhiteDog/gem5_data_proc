@@ -84,6 +84,7 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name):
         ax_bar = ax[fx,fy]
         s_dicts = {}
         lru_hit_cnts = [np.zeros(full_ass) for _ in range(all_set)]
+        set_hit_cnts = np.zeros(all_set)
 
         partsname = os.listdir(word_dir) #like l3-1
         for part in partsname:
@@ -115,6 +116,7 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name):
                 res = list(fi)
                 if len(res) > 0:
                     #hit
+                    set_hit_cnts[idx] += 1
                     get_pair = res[0]
                     lru_index = ls.index(get_pair)
                     hit_pos = len(ls) - lru_index - 1
@@ -133,16 +135,18 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name):
         s_dicts['min_ways_2_extra_miss'] = [full_ass for _ in range(all_set)]
 
         for idx in range(all_set):
-            set_hit_cnt = lru_hit_cnts[idx]
-            sum_miss = 0
-            for ways in range(full_ass,0,-1):
-                sum_miss += set_hit_cnt[ways-1]
-                if sum_miss == 0:
-                    s_dicts['min_ways_no_extra_miss'][idx] = min(s_dicts['min_ways_no_extra_miss'][idx],ways)
-                if sum_miss <= 1:
-                    s_dicts['min_ways_1_extra_miss'][idx] = min(s_dicts['min_ways_1_extra_miss'][idx],ways)
-                if sum_miss <= 2:
-                    s_dicts['min_ways_2_extra_miss'][idx] = min(s_dicts['min_ways_2_extra_miss'][idx],ways)
+            hitpos_cnts = lru_hit_cnts[idx]
+            set_hit_cnt = set_hit_cnts[idx]
+            sum_hit = 0
+            for hitpos in range(full_ass):
+                sum_hit += hitpos_cnts[hitpos]
+                hit_loss =  set_hit_cnt - sum_hit
+                if hit_loss == 0:
+                    s_dicts['min_ways_no_extra_miss'][idx] = min(s_dicts['min_ways_no_extra_miss'][idx],hitpos+1)
+                if hit_loss <= 1:
+                    s_dicts['min_ways_1_extra_miss'][idx] = min(s_dicts['min_ways_1_extra_miss'][idx],hitpos+1)
+                if hit_loss <= 2:
+                    s_dicts['min_ways_2_extra_miss'][idx] = min(s_dicts['min_ways_2_extra_miss'][idx],hitpos+1)
 
         draw_one_func(ax_bar,s_dicts,work,full_ass,(fx,fy))
 
