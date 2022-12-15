@@ -1,17 +1,18 @@
-cache_work_names = [
-    'gcc_g23',
-    'sphinx3',
-    'soplex_pds',
-    'xalancbmk',
-    'mcf',
-    'cactusADM',
-    'gcc_200',
-    'lbm',
-    'gcc_cpdecl',
-    'astar_biglakes',
-    'gcc_scilab',
-    'omnetpp',
-]
+base_dir = '/nfs/home/zhangchuanqi/lvna/for_xs/catlog/newdb-single-profiling/'
+# cache_work_names = [
+#     'gcc_g23',
+#     'sphinx3',
+#     'soplex_pds',
+#     'xalancbmk',
+#     'mcf',
+#     'cactusADM',
+#     'gcc_200',
+#     'lbm',
+#     'gcc_cpdecl',
+#     'astar_biglakes',
+#     'gcc_scilab',
+#     'omnetpp',
+# ]
 # cache_work_90perfways = {
 #     'gcc_g23': 8,
 #     'sphinx3': 4,
@@ -54,6 +55,19 @@ cache_work_names = [
 #     'gcc_scilab': 8,
 #     'omnetpp': 8,
 # }
+cache_work_names = [
+    'gcc_g23',
+    'sphinx3',
+    'soplex_pds',
+    'xalancbmk',
+    'mcf',
+    'cactusADM',
+    'lbm',
+    'gcc_200',
+    'gcc_cpdecl',
+    'omnetpp',
+    'gcc_scilab',
+]
 cache_work_90perfways = {
     'gcc_g23': 7,
     'sphinx3': 4,
@@ -61,12 +75,11 @@ cache_work_90perfways = {
     'xalancbmk': 7,
     'mcf': 7,
     'cactusADM': 5,
-    'gcc_200': 4,
     'lbm': 5,
-    'gcc_cpdecl': 3,
-    'astar_biglakes': 1,
-    'gcc_scilab': 2,
+    'gcc_200': 3,
+    'gcc_cpdecl': 2,
     'omnetpp': 2,
+    'gcc_scilab': 2,
 }
 cache_work_95perfways = {
     'gcc_g23': 7,
@@ -75,13 +88,13 @@ cache_work_95perfways = {
     'xalancbmk': 7,
     'mcf': 7,
     'cactusADM': 5,
-    'gcc_200': 5,
     'lbm': 7,
-    'gcc_cpdecl': 3,
-    'astar_biglakes': 5,
+    'gcc_200': 5,
+    'gcc_cpdecl': 4,
     'gcc_scilab': 3,
     'omnetpp': 4,
 }
+
 cache_work_fullways = {
     'gcc_g23': 8,
     'sphinx3': 8,
@@ -89,10 +102,10 @@ cache_work_fullways = {
     'xalancbmk': 8,
     'mcf': 8,
     'cactusADM': 8,
-    'gcc_200': 8,
     'lbm': 8,
+    'gcc_200': 8,
     'gcc_cpdecl': 8,
-    'astar_biglakes': 8,
+    # 'astar_biglakes': 8,
     'gcc_scilab': 8,
     'omnetpp': 8,
 }

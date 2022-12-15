@@ -135,6 +135,10 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name):
             cur.close()
         draw_one_func(ax_bar,s_dicts,work,(fx,fy))
 
+    for i in range(len(worksname_waydict),n_rows*4):
+        fx = i // 4
+        fy = i % 4
+        ax[fx,fy].remove()
 
     plt.tight_layout()
     plt.savefig(fig_name,dpi=300)
@@ -143,7 +147,7 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name):
 from cache_sensitive_names import *
 
 if __name__ == '__main__':
-    base_dir = '/nfs/home/zhangchuanqi/lvna/for_xs/catlog/single-profiling/'
+    # base_dir = '/nfs/home/zhangchuanqi/lvna/for_xs/catlog/single-profiling/'
     worksname = cache_work_names #like mcf
     # worksname = ['sphinx3','mcf'] #like mcf
     # worksname = os.listdir(base_dir)

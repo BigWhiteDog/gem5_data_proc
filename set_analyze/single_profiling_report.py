@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from matplotlib.pyplot import MultipleLocator
 from matplotlib import ticker
 
+from cache_sensitive_names import *
 
 parser = argparse.ArgumentParser(description="options to get set stats")
 # parser.add_argument('-d','--stats_dir', type=str,
@@ -93,7 +94,7 @@ def draw_by_func(base_dir,n_rows,worksname,draw_one_func,fig_name):
                 continue
             new_base = os.path.join(word_dir,part)
             last_nsamples=1
-            # one_dict = extract_newgem_raw_json(new_base,ncores=1,last_nsamples=last_nsamples)
+            one_dict = extract_newgem_raw_json(new_base,ncores=1,last_nsamples=last_nsamples)
             with open(os.path.join(new_base,f'{last_nsamples}period.json'),'r') as f:
                 one_dict = json.load(f)
             # ways[1] as key
@@ -107,7 +108,7 @@ def draw_by_func(base_dir,n_rows,worksname,draw_one_func,fig_name):
 
 
 if __name__ == '__main__':
-    base_dir = '/nfs/home/zhangchuanqi/lvna/for_xs/catlog/single-profiling/'
+    # base_dir = '/nfs/home/zhangchuanqi/lvna/for_xs/catlog/single-profiling/'
     n_works = 53
     n_rows = math.ceil(n_works/4)
     worksname = os.listdir(base_dir) #like omnetpp
