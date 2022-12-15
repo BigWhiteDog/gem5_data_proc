@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from genericpath import isdir
 import os
 import re
@@ -61,6 +62,9 @@ def draw_one_workload_len_est(ax,s_dicts,workload_name,full_ass,pos:tuple):
     another_s_accesslen_list = sorted(s_accesslen_list)
     tail_accesslen_995 = another_s_accesslen_list[math.ceil(all_set * 0.995)]
 
+    another_s_cycle_list = sorted(s_cycle_list)
+    tail_cycle_995 = another_s_cycle_list[math.ceil(all_set * 0.995)]
+
     extra0_list_color = contrasting_orange[2]
     extra1_list_color = contrasting_orange[3]
     extra2_list_color = contrasting_orange[4]
@@ -81,6 +85,13 @@ def draw_one_workload_len_est(ax,s_dicts,workload_name,full_ass,pos:tuple):
     ax.yaxis.set_major_locator(MaxNLocator('auto',integer=True))
     # ax.set_ylim(0, 8)
     # ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+
+    ax2 = ax.twinx()
+    ax2.plot(s_cycle_list, label='cycle', color = contrasting_orange[8],linewidth=1)
+    ax2.set_ylabel('needed cycle')
+    ax2.set_ylim(0, tail_cycle_995)
+    ax2.yaxis.set_major_locator(MaxNLocator('auto',integer=True))
+
     ax.set_xlabel('set idx (sorted by atd min 0miss ways)')
     ax.set_title(f'{workload_name}')
     if pos == (0,0):
@@ -141,118 +152,165 @@ def draw_one_workload_len_est_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
         # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
         #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
 
+def draw_one_workload_cycle_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    label_s = ['no_extra_miss_cycle']
+    cyclelen_list = s_dicts[label_s[0]]
 
-def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,sc_max=4):
+    cyclelen_list_color = contrasting_orange[9]
+    s_cyclen_list = np.sort(cyclelen_list)
+    tail_cycle_995 = s_cyclen_list[int(0.995*len(s_cyclen_list))]
+    cyclelen_list = np.clip(cyclelen_list,0,tail_cycle_995)
+    # cyclelen_hist,cyclelen_edges = np.histogram(cyclelen_list, bins = 'auto',density=True)
+    # sum_density = np.sum(cyclelen_hist)
+    # cyclelen_hist = cyclelen_hist/sum_density
+    # sum_h = 0
+    # for i,h in enumerate(cyclelen_hist):
+    #     sum_h += h
+    #     if sum_h >= 0.995:
+    #         cyclelen_list = np.clip(cyclelen_list,0,cyclelen_edges[i])
+    #         # hitlen_edges = np.delete(hitlen_edges, np.arange( i+1, len(hitlen_edges)-1 ) )
+    #         break
+    ax.hist(cyclelen_list, bins = 'auto', label='cycle len',histtype = 'step', 
+            density=True, cumulative=True, color = cyclelen_list_color,  linewidth=2)
+
+    ax.set_ylabel('portion of sets to be est exactly')
+    # ax.set_ylim(0, 8)
+    # ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    # ax.set_ylim(0, 1)
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, decimals=0))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.05))
+    ax.set_xlabel('needed cycles')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
+        # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
+        #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
+
+
+def analyze_workload_len_est(work_stats_dict,work,work_dir,full_ass):
+    if work in work_stats_dict:
+        return
+    s_2 = re.compile(r'(\w+)-([\w\.]+)')
+    s_dicts = {}
+    lru_hit_cnts = [np.zeros(full_ass) for _ in range(all_set)]
+    hit_len_hit_cnts = [np.zeros(full_ass) for _ in range(all_set)]
+    hit_len_access_cnts = [np.zeros(full_ass) for _ in range(all_set)]
+    reach_hit_cycles = [np.zeros(full_ass) for _ in range(all_set)]
+    set_hit_cnts = np.zeros(all_set)
+    set_access_cnts = np.zeros(all_set)
+
+    partsname = os.listdir(work_dir) #like l3-1
+    for part in partsname:
+        if not os.path.isdir(os.path.join(work_dir,part)):
+            continue
+        res = s_2.search(part)
+        if not res:
+            continue
+        if res.group(1) != 'l3':
+            continue
+        ways = int(res.group(2))
+        if ways != full_ass:
+            continue
+
+        new_base = os.path.join(work_dir,part)
+        db_path = os.path.join(new_base,'hm.db')
+        all_access_query = 'SELECT SETIDX,TAG,STAMP FROM HitMissTrace;'
+        con = sqlite3.connect(db_path)
+        cur = con.cursor()
+        f = cur.execute(all_access_query)
+
+        lru_states = [SortedList() for _ in range(all_set)]
+        stamp0 = 0
+        for idx,tag,stamp in f:
+            idx = int(idx)
+            tag = int(tag)
+            stamp = int(stamp)
+            if stamp0 == 0:
+                stamp0 = stamp
+            delta_stamp = stamp - stamp0
+            ls = lru_states[idx]
+            fi = filter(lambda x: x[1] == tag, ls)
+            res = list(fi)
+            set_access_cnts[idx] += 1
+            if len(res) > 0:
+                #hit
+                set_hit_cnts[idx] += 1
+                #record hit pos
+                get_pair = res[0]
+                lru_index = ls.index(get_pair)
+                hit_pos = len(ls) - lru_index - 1
+                if lru_hit_cnts[idx][hit_pos] == 0:
+                    #first reach a hit pos
+                    hit_len_hit_cnts[idx][hit_pos] = set_hit_cnts[idx]
+                    hit_len_access_cnts[idx][hit_pos] = set_access_cnts[idx]
+                    reach_hit_cycles[idx][hit_pos] = delta_stamp
+                lru_hit_cnts[idx][hit_pos] += 1
+                #modify lru
+                ls.remove(get_pair)
+                ls.add([stamp,tag])
+            else:
+                #miss
+                if len(ls) >= full_ass:
+                    ls.pop(0)
+                ls.add([stamp,tag])
+
+        cur.close()
+    s_dicts['min_ways_no_extra_miss'] = [full_ass for _ in range(all_set)]
+    s_dicts['min_ways_1_extra_miss'] = [full_ass for _ in range(all_set)]
+    s_dicts['min_ways_2_extra_miss'] = [full_ass for _ in range(all_set)]
+    s_dicts['no_extra_miss_hit_len'] = [0 for _ in range(all_set)]
+    s_dicts['no_extra_miss_access_len'] = [0 for _ in range(all_set)]
+    s_dicts['no_extra_miss_cycle'] = [0 for _ in range(all_set)]
+    
+
+    for idx in range(all_set):
+        hitpos_cnts = lru_hit_cnts[idx]
+        set_hit_cnt = set_hit_cnts[idx]
+        sum_hit = 0
+        for hitpos in range(full_ass):
+            sum_hit += hitpos_cnts[hitpos]
+            hit_loss =  set_hit_cnt - sum_hit
+            if hit_loss == 0:
+                s_dicts['min_ways_no_extra_miss'][idx] = min(s_dicts['min_ways_no_extra_miss'][idx],hitpos+1)
+            if hit_loss <= 1:
+                s_dicts['min_ways_1_extra_miss'][idx] = min(s_dicts['min_ways_1_extra_miss'][idx],hitpos+1)
+            if hit_loss <= 2:
+                s_dicts['min_ways_2_extra_miss'][idx] = min(s_dicts['min_ways_2_extra_miss'][idx],hitpos+1)
+
+        min_ways_0 = s_dicts['min_ways_no_extra_miss'][idx]
+        s_dicts['no_extra_miss_hit_len'][idx] = hit_len_hit_cnts[idx][min_ways_0-1]
+        s_dicts['no_extra_miss_access_len'][idx] = hit_len_access_cnts[idx][min_ways_0-1]
+        s_dicts['no_extra_miss_cycle'][idx] = reach_hit_cycles[idx][min_ways_0-1]
+
+    work_stats_dict[work] = s_dicts
+
+def draw_db_by_func(base_dir,n_rows,worksname_waydict,analyze_func,draw_one_func,fig_name,input_stats_dict=None):
     fig,ax = plt.subplots(n_rows,4)
     fig.set_size_inches(24, 4.5*n_rows+3)
 
-    s_2 = re.compile(r'(\w+)-([\w\.]+)')
-
+    work_stats_dict = {}
+    if input_stats_dict is not None:
+        work_stats_dict = input_stats_dict
 
     for i,work in enumerate(worksname_waydict):
         full_ass = worksname_waydict[work]
-        word_dir = os.path.join(base_dir,work)
-        if not os.path.isdir(word_dir):
+        work_dir = os.path.join(base_dir,work)
+        if not os.path.isdir(work_dir):
             continue
         fy = i % 4
         fx = i // 4
         ax_bar = ax[fx,fy]
-        s_dicts = {}
-        lru_hit_cnts = [np.zeros(full_ass) for _ in range(all_set)]
-        hit_len_hit_cnts = [np.zeros(full_ass) for _ in range(all_set)]
-        hit_len_access_cnts = [np.zeros(full_ass) for _ in range(all_set)]
-        reach_hit_cycles = [np.zeros(full_ass) for _ in range(all_set)]
-        set_hit_cnts = np.zeros(all_set)
-        set_access_cnts = np.zeros(all_set)
-
-        partsname = os.listdir(word_dir) #like l3-1
-        for part in partsname:
-            if not os.path.isdir(os.path.join(word_dir,part)):
-                continue
-            res = s_2.search(part)
-            if not res:
-                continue
-            if res.group(1) != 'l3':
-                continue
-            ways = int(res.group(2))
-            if ways != full_ass:
-                continue
-
-            new_base = os.path.join(word_dir,part)
-            db_path = os.path.join(new_base,'hm.db')
-            all_access_query = 'SELECT SETIDX,TAG,STAMP FROM HitMissTrace;'
-            con = sqlite3.connect(db_path)
-            cur = con.cursor()
-            f = cur.execute(all_access_query)
-
-            lru_states = [SortedList() for _ in range(all_set)]
-            stamp0 = 0
-            for idx,tag,stamp in f:
-                idx = int(idx)
-                tag = int(tag)
-                stamp = int(stamp)
-                if stamp0 == 0:
-                    stamp0 = stamp
-                delta_stamp = stamp - stamp0
-                ls = lru_states[idx]
-                fi = filter(lambda x: x[1] == tag, ls)
-                res = list(fi)
-                set_access_cnts[idx] += 1
-                if len(res) > 0:
-                    #hit
-                    set_hit_cnts[idx] += 1
-                    #record hit pos
-                    get_pair = res[0]
-                    lru_index = ls.index(get_pair)
-                    hit_pos = len(ls) - lru_index - 1
-                    if lru_hit_cnts[idx][hit_pos] == 0:
-                        #first reach a hit pos
-                        hit_len_hit_cnts[idx][hit_pos] = set_hit_cnts[idx]
-                        hit_len_access_cnts[idx][hit_pos] = set_access_cnts[idx]
-                        reach_hit_cycles[idx][hit_pos] = delta_stamp
-                    lru_hit_cnts[idx][hit_pos] += 1
-                    #modify lru
-                    ls.remove(get_pair)
-                    ls.add([stamp,tag])
-                else:
-                    #miss
-                    if len(ls) >= full_ass:
-                        ls.pop(0)
-                    ls.add([stamp,tag])
-
-            cur.close()
-        s_dicts['min_ways_no_extra_miss'] = [full_ass for _ in range(all_set)]
-        s_dicts['min_ways_1_extra_miss'] = [full_ass for _ in range(all_set)]
-        s_dicts['min_ways_2_extra_miss'] = [full_ass for _ in range(all_set)]
-        s_dicts['no_extra_miss_hit_len'] = [0 for _ in range(all_set)]
-        s_dicts['no_extra_miss_access_len'] = [0 for _ in range(all_set)]
-        s_dicts['no_extra_miss_cycle'] = [0 for _ in range(all_set)]
-        
-
-        for idx in range(all_set):
-            hitpos_cnts = lru_hit_cnts[idx]
-            set_hit_cnt = set_hit_cnts[idx]
-            sum_hit = 0
-            for hitpos in range(full_ass):
-                sum_hit += hitpos_cnts[hitpos]
-                hit_loss =  set_hit_cnt - sum_hit
-                if hit_loss == 0:
-                    s_dicts['min_ways_no_extra_miss'][idx] = min(s_dicts['min_ways_no_extra_miss'][idx],hitpos+1)
-                if hit_loss <= 1:
-                    s_dicts['min_ways_1_extra_miss'][idx] = min(s_dicts['min_ways_1_extra_miss'][idx],hitpos+1)
-                if hit_loss <= 2:
-                    s_dicts['min_ways_2_extra_miss'][idx] = min(s_dicts['min_ways_2_extra_miss'][idx],hitpos+1)
-
-            min_ways_0 = s_dicts['min_ways_no_extra_miss'][idx]
-            s_dicts['no_extra_miss_hit_len'][idx] = hit_len_hit_cnts[idx][min_ways_0-1]
-            s_dicts['no_extra_miss_access_len'][idx] = hit_len_access_cnts[idx][min_ways_0-1]
-            s_dicts['no_extra_miss_cycle'][idx] = reach_hit_cycles[idx][min_ways_0-1]
-        draw_one_func(ax_bar,s_dicts,work,full_ass,(fx,fy))
+        analyze_func(work_stats_dict,work,work_dir,full_ass)
+        s_dicts = work_stats_dict[work]
+        draw_one_func(ax_bar,s_dicts,work,full_ass,(fx,fy))     
 
 
     plt.tight_layout()
     plt.savefig(fig_name,dpi=300)
     plt.clf()
+
+    return work_stats_dict
 
 
 if __name__ == '__main__':
@@ -262,16 +320,45 @@ if __name__ == '__main__':
     # worksname = os.listdir(base_dir)
     n_works = len(worksname)
     n_rows = math.ceil(n_works/4)
-    draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
-        draw_one_func=draw_one_workload_len_est,fig_name='set_analyze/pics/est_justlen_90perf_dis.png')
-    draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
-        draw_one_func=draw_one_workload_len_est,fig_name='set_analyze/pics/est_justlen_95perf_dis.png')
-    draw_db_by_func(base_dir,n_rows,cache_work_fullways,
-        draw_one_func=draw_one_workload_len_est,fig_name='set_analyze/pics/est_justlen_dis.png')
 
+    w_dict_90 = draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
+        analyze_func=analyze_workload_len_est,
+        draw_one_func=draw_one_workload_len_est,fig_name='set_analyze/pics/est_justlen_90perf_dis.png')
     draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
-        draw_one_func=draw_one_workload_len_est_hist,fig_name='set_analyze/pics/est_lencdf_90perf_dis.png')
+        analyze_func=analyze_workload_len_est,
+        draw_one_func=draw_one_workload_len_est_hist,
+        fig_name='set_analyze/pics/est_lencdf_90perf_dis.png',
+        input_stats_dict=w_dict_90)
+    draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
+        analyze_func=analyze_workload_len_est,
+        draw_one_func=draw_one_workload_cycle_hist,
+        fig_name='set_analyze/pics/est_cyclecdf_90perf_dis.png',
+        input_stats_dict=w_dict_90)
+
+    w_dict_95 = draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
+        analyze_func=analyze_workload_len_est,
+        draw_one_func=draw_one_workload_len_est,fig_name='set_analyze/pics/est_justlen_95perf_dis.png')
     draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
-        draw_one_func=draw_one_workload_len_est_hist,fig_name='set_analyze/pics/est_lencdf_95perf_dis.png')
+        analyze_func=analyze_workload_len_est,
+        draw_one_func=draw_one_workload_len_est_hist,
+        fig_name='set_analyze/pics/est_lencdf_95perf_dis.png',
+        input_stats_dict=w_dict_95)
+    draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
+        analyze_func=analyze_workload_len_est,
+        draw_one_func=draw_one_workload_cycle_hist,
+        fig_name='set_analyze/pics/est_cyclecdf_95perf_dis.png',
+        input_stats_dict=w_dict_95)
+
+    w_dict_full = draw_db_by_func(base_dir,n_rows,cache_work_fullways,
+        analyze_func=analyze_workload_len_est,
+        draw_one_func=draw_one_workload_len_est,fig_name='set_analyze/pics/est_justlen_dis.png')
     draw_db_by_func(base_dir,n_rows,cache_work_fullways,
-        draw_one_func=draw_one_workload_len_est_hist,fig_name='set_analyze/pics/est_lencdf_dis.png')
+        analyze_func=analyze_workload_len_est,
+        draw_one_func=draw_one_workload_len_est_hist,
+        fig_name='set_analyze/pics/est_lencdf_dis.png',
+        input_stats_dict=w_dict_full)
+    draw_db_by_func(base_dir,n_rows,cache_work_fullways,
+        analyze_func=analyze_workload_len_est,
+        draw_one_func=draw_one_workload_cycle_hist,
+        fig_name='set_analyze/pics/est_cyclecdf_dis.png',
+        input_stats_dict=w_dict_full)
