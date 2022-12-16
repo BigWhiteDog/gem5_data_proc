@@ -109,11 +109,16 @@ def draw_by_func(base_dir,n_rows,worksname,draw_one_func,fig_name):
 
 if __name__ == '__main__':
     # base_dir = '/nfs/home/zhangchuanqi/lvna/for_xs/catlog/single-profiling/'
+    use_conf = conf_50M
+    test_prefix = use_conf['test_prefix']
+    base_dir = base_dir_format.format(test_prefix)
+    pic_dir_path = f'set_analyze/{test_prefix}pics'
+    os.makedirs(pic_dir_path, exist_ok=True)
     n_works = 53
     n_rows = math.ceil(n_works/4)
     worksname = os.listdir(base_dir) #like omnetpp
     worksname.sort()
     draw_by_func(base_dir,n_rows,worksname,
-        draw_one_func=draw_one_workload_ipc,fig_name='setconf_single_profiling_ipc.png')
+        draw_one_func=draw_one_workload_ipc,fig_name=os.path.join(pic_dir_path,'setconf_single_profiling_ipc.png'))
     draw_by_func(base_dir,n_rows,worksname,
-        draw_one_func=draw_one_workload_missrate,fig_name='setconf_single_profiling_mr.png')
+        draw_one_func=draw_one_workload_missrate,fig_name=os.path.join(pic_dir_path,'setconf_single_profiling_mr.png'))

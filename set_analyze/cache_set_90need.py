@@ -141,15 +141,21 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name):
 
 
 if __name__ == '__main__':
-    # base_dir = '/nfs/home/zhangchuanqi/lvna/for_xs/catlog/single-profiling/'
-    worksname = cache_work_names #like mcf
-    # worksname = ['sphinx3','mcf'] #like mcf
-    # worksname = os.listdir(base_dir)
+    # use_conf = conf_50M
+    test_prefix = use_conf['test_prefix']
+    base_dir = base_dir_format.format(test_prefix)
+    pic_dir_path = f'set_analyze/{test_prefix}pics'
+    os.makedirs(pic_dir_path, exist_ok=True)
+    worksname = use_conf['cache_work_names'] #like mcf
+    cache_work_90perfways = use_conf['cache_work_90perfways']
+    cache_work_95perfways = use_conf['cache_work_95perfways']
+    cache_work_fullways = use_conf['cache_work_fullways']
+
     n_works = len(worksname)
     n_rows = math.ceil(n_works/4)
     draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
-        draw_one_func=draw_one_workload_way_need,fig_name='set_analyze/pics/way_need_90perf_dis.png')
+        draw_one_func=draw_one_workload_way_need,fig_name= os.path.join(pic_dir_path,'way_need_90perf_dis.png'))
     draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
-        draw_one_func=draw_one_workload_way_need,fig_name='set_analyze/pics/way_need_95perf_dis.png')
+        draw_one_func=draw_one_workload_way_need,fig_name=os.path.join(pic_dir_path,'way_need_95perf_dis.png'))
     draw_db_by_func(base_dir,n_rows,cache_work_fullways,
-        draw_one_func=draw_one_workload_way_need,fig_name='set_analyze/pics/way_need_dis.png')
+        draw_one_func=draw_one_workload_way_need,fig_name=os.path.join(pic_dir_path,'way_need_dis.png'))
