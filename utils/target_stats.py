@@ -68,6 +68,7 @@ llc_targets = [
 
 llc_targets_newgem = [
     '(numCycles)',
+    '(cpu\d*\.numCycles)',
     'cpus?\.committed(Insts)',
     'cpus?\.(ipc)',
     '(cpu\d*\.committedInsts)',
