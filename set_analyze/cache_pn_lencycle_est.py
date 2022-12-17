@@ -1,0 +1,277 @@
+from collections import OrderedDict
+from genericpath import isdir
+import os
+import re
+import numpy as np
+import utils.common as c
+from utils.common import extract_newgem_raw_json
+import utils.target_stats as t
+import numpy as np
+import argparse
+import math
+from sortedcontainers import SortedDict,SortedList,SortedKeyList
+from matplotlib.ticker import MaxNLocator
+
+import json
+
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import MultipleLocator
+from matplotlib import ticker
+from matplotlib.patches import Patch
+import sqlite3
+
+
+parser = argparse.ArgumentParser(description="options to get set stats")
+# parser.add_argument('-d','--stats_dir', type=str,
+#     help='stats dir to analyze',required=True)
+# parser.add_argument('--ids',default=16,type=int)
+# parser.add_argument('--nsamples',default=2,type=int)
+# parser.add_argument('--l3_sets',default=4096,type=int)
+
+opt = parser.parse_args()
+
+from cache_sensitive_names import *
+from set_analyze.my_diff_color import *
+
+all_set = 16384
+
+def draw_one_workload_pn_need(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    extra0_list = s_dicts['est_used_ways']
+    s_extra0_list = sorted(extra0_list)
+    x_val = np.arange(all_set)
+    full_ass_vals = np.full(all_set,full_ass)
+
+    extra0_list_color = contrasting_orange[6]
+    alpha_set = 0.8
+    ax.plot(s_extra0_list, label='min est ways', color = extra0_list_color,linewidth=1)
+    ax.fill_between(x_val, full_ass_vals, s_extra0_list, color = extra0_list_color, alpha=alpha_set)
+    ax.set_ylabel('needed ways')
+    ax.set_ylim(0, 8)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.set_xlabel('set idx (sorted by min used ways)')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
+        # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
+        #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
+
+
+def draw_one_workload_pn_hitlen(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    ways_len_dicts = s_dicts['est_way_hitlen']
+    full_first_len_list = []
+    for i in range(full_ass,0,-1):
+        full_first_len_list.append( ways_len_dicts[i] )
+    sorted_zip_setlist = sorted(zip(*full_first_len_list))
+    sorted_setlists = list(zip(*sorted_zip_setlist))
+    sorted_setlists.reverse()
+    tail_len_995 = sorted_setlists[-1][math.ceil(all_set * 0.995)]
+    x_val = np.arange(all_set)
+
+    alpha_set = 0.9
+    for i in range(full_ass):
+        est_way = i+1
+        my_color = sunset_oranges[-(i+1)]
+        ax.plot(sorted_setlists[i], label=f'est {est_way}ways',color = my_color,linewidth=1)
+        if i > 0:
+            ax.fill_between(x_val, sorted_setlists[i-1], sorted_setlists[i], color = my_color, alpha=alpha_set)
+        else:
+            ax.fill_between(x_val, np.zeros(all_set), sorted_setlists[i], color = my_color, alpha=alpha_set)
+    ax.set_ylabel('needed blocks')
+    ax.set_ylim(0, tail_len_995)
+    ax.yaxis.set_major_locator(MaxNLocator('auto',integer=True))
+    # ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+
+    ax.set_xlabel('set idx (sorted by est all ways needed blocks)')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 2, columnspacing=0.5, labelspacing=0.1)
+        # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
+        #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
+
+class SetPositiveState:
+    def __init__(self, set_id, full_ass, meta_bits=2):
+        self.set_id = set_id
+        self.full_ass = full_ass
+        self.meta_bits = meta_bits
+        self.positive_bits = np.full(full_ass, False)
+        self.positive_num = 0
+        self.positive_hitlen_record = np.zeros(full_ass+1)
+        self.positive_blocklen_record = np.zeros(full_ass+1)
+        self.positive_cyclelen_record = np.zeros(full_ass+1)
+        self.hitlen = 0
+        self.blocklen = 0
+
+        self.meta_mask = (1 << meta_bits) - 1
+
+    def newHit(self, way_id, delta_stamp):
+        self.blocklen += 1
+        self.hitlen += 1
+        if not self.positive_bits[way_id]:
+            #when hit a negative block, there will be new infeciton
+            self.positive_bits[way_id] = True
+            self.positive_num += 1
+            self.positive_hitlen_record[self.positive_num] = self.hitlen
+            self.positive_blocklen_record[self.positive_num] = self.blocklen
+            self.positive_cyclelen_record[self.positive_num] = delta_stamp
+
+    def newBlock(self, way_id, meta_datas):
+        self.blocklen += 1
+        max_positive_idx = -1
+        max_positive_value = -1
+        if not self.positive_bits[way_id]:
+            for i in range(self.full_ass):
+                #find max metadata positive block
+                if self.positive_bits[i]:
+                    tmp_meta = meta_datas & self.meta_mask
+                    if tmp_meta > max_positive_value:
+                        max_positive_value = tmp_meta
+                        max_positive_idx = i
+                meta_datas >>= self.meta_bits
+            if max_positive_idx >= 0:
+                self.positive_bits[max_positive_idx] = False
+            self.positive_bits[way_id] = True
+                    
+
+            
+
+def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
+    if work in work_stats_dict:
+        return
+    s_2 = re.compile(r'(\w+)-([\w\.]+)')
+    s_dicts = {}
+
+    partsname = os.listdir(work_dir) #like l3-1
+    for part in partsname:
+        if not os.path.isdir(os.path.join(work_dir,part)):
+            continue
+        res = s_2.search(part)
+        if not res:
+            continue
+        if res.group(1) != 'l3':
+            continue
+        ways = int(res.group(2))
+        if ways != full_ass:
+            continue
+
+        new_base = os.path.join(work_dir,part)
+        db_path = os.path.join(new_base,'hm.db')
+        all_access_query = 'SELECT SETIDX,WAYIDX,ISINS,METAS,STAMP FROM HitPosTrace;'
+        con = sqlite3.connect(db_path)
+        cur = con.cursor()
+        f = cur.execute(all_access_query)
+
+        pn_states = [SetPositiveState(i,full_ass) for i in range(all_set)]
+        stamp0 = 0
+        for setidx,wayidx,isins,metas,stamp in f:
+            setidx = int(setidx)
+            wayidx = int(wayidx)
+            isins = bool(int(isins))
+            metas = int(metas)
+            stamp = int(stamp)
+            if stamp0 == 0:
+                stamp0 = stamp
+            delta_stamp = stamp - stamp0
+            if isins:
+                #insert block
+                pn_states[setidx].newBlock(wayidx,metas)
+            else:
+                #hit block
+                pn_states[setidx].newHit(wayidx,delta_stamp)
+
+        cur.close()
+    s_dicts['est_used_ways'] = [1 for _ in range(all_set)]
+    s_dicts['est_way_hitlen'] = {}
+    s_dicts['est_way_blocklen'] = {}
+    s_dicts['est_way_cyclelen'] = {}
+    for w in range(1,full_ass+1):
+        s_dicts['est_way_hitlen'][w] = np.zeros(all_set)
+        s_dicts['est_way_blocklen'][w] = np.zeros(all_set)
+        s_dicts['est_way_cyclelen'][w] = np.zeros(all_set)
+
+
+    for idx in range(all_set):
+        set_pn_state = pn_states[idx]
+        s_dicts['est_used_ways'][idx] = max(set_pn_state.positive_num,1)
+        for pos_num in range(1,full_ass+1):
+            used_pos_num = min(pos_num,set_pn_state.positive_num)
+            s_dicts['est_way_hitlen'][pos_num][idx] = set_pn_state.positive_hitlen_record[used_pos_num]
+            s_dicts['est_way_blocklen'][pos_num][idx] = set_pn_state.positive_blocklen_record[used_pos_num]
+            s_dicts['est_way_cyclelen'][pos_num][idx] = set_pn_state.positive_blocklen_record[used_pos_num]
+
+    work_stats_dict[work] = s_dicts
+
+def draw_db_by_func(base_dir,n_rows,worksname_waydict,analyze_func,draw_one_func,fig_name,input_stats_dict=None):
+    fig,ax = plt.subplots(n_rows,4)
+    fig.set_size_inches(24, 4.5*n_rows+3)
+
+    work_stats_dict = {}
+    if input_stats_dict is not None:
+        work_stats_dict = input_stats_dict
+
+    for i,work in enumerate(worksname_waydict):
+        full_ass = worksname_waydict[work]
+        work_dir = os.path.join(base_dir,work)
+        if not os.path.isdir(work_dir):
+            continue
+        fy = i % 4
+        fx = i // 4
+        ax_bar = ax[fx,fy]
+        analyze_func(work_stats_dict,work,work_dir,full_ass)
+        s_dicts = work_stats_dict[work]
+        draw_one_func(ax_bar,s_dicts,work,full_ass,(fx,fy))     
+
+    for i in range(len(worksname_waydict),n_rows*4):
+        fx = i // 4
+        fy = i % 4
+        ax[fx,fy].remove()
+
+    plt.tight_layout()
+    plt.savefig(fig_name,dpi=300)
+    plt.clf()
+
+    return work_stats_dict
+
+
+if __name__ == '__main__':
+    # use_conf = conf_50M
+    test_prefix = use_conf['test_prefix']
+    base_dir = base_dir_format.format(test_prefix)
+    pic_dir_path = f'set_analyze/{test_prefix}pics'
+    os.makedirs(pic_dir_path, exist_ok=True)
+    worksname = use_conf['cache_work_names'] #like mcf
+    cache_work_90perfways = use_conf['cache_work_90perfways']
+    cache_work_95perfways = use_conf['cache_work_95perfways']
+    cache_work_fullways = use_conf['cache_work_fullways']
+
+    n_works = len(worksname)
+    n_rows = math.ceil(n_works/4)
+
+    w_dict_90 = draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
+        analyze_func=analyze_pn_lencycle_est,
+        draw_one_func=draw_one_workload_pn_need,fig_name=os.path.join(pic_dir_path,'pn_est_wayneed_90perf.png'))
+    draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
+        analyze_func=analyze_pn_lencycle_est,
+        draw_one_func=draw_one_workload_pn_hitlen,
+        fig_name=os.path.join(pic_dir_path,'pn_est_hitlen_contour_90perf.png'),
+        input_stats_dict=w_dict_90)
+
+    w_dict_95 = draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
+        analyze_func=analyze_pn_lencycle_est,
+        draw_one_func=draw_one_workload_pn_need,fig_name=os.path.join(pic_dir_path,'pn_est_wayneed_95perf.png'))
+    draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
+        analyze_func=analyze_pn_lencycle_est,
+        draw_one_func=draw_one_workload_pn_hitlen,
+        fig_name=os.path.join(pic_dir_path,'pn_est_hitlen_contour_95perf.png'),
+        input_stats_dict=w_dict_95)
+
+
+    w_dict_full = draw_db_by_func(base_dir,n_rows,cache_work_fullways,
+        analyze_func=analyze_pn_lencycle_est,
+        draw_one_func=draw_one_workload_pn_need,fig_name=os.path.join(pic_dir_path,'pn_est_wayneed_100perf.png'))
+    draw_db_by_func(base_dir,n_rows,cache_work_fullways,
+        analyze_func=analyze_pn_lencycle_est,
+        draw_one_func=draw_one_workload_pn_hitlen,
+        fig_name=os.path.join(pic_dir_path,'pn_est_hitlen_contour_100perf.png'),
+        input_stats_dict=w_dict_full)
