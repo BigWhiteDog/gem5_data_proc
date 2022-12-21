@@ -84,7 +84,7 @@ def draw_one_workload_pn_hitlen(ax,s_dicts,workload_name,full_ass,pos:tuple):
             ax.fill_between(x_val, sorted_setlists[i-1], sorted_setlists[i], color = my_color, alpha=alpha_set)
         else:
             ax.fill_between(x_val, np.zeros(all_set), sorted_setlists[i], color = my_color, alpha=alpha_set)
-    ax.set_ylabel('needed hit blocks')
+    ax.set_ylabel('needed hit blocks accesing the set')
     # ax.set_ylim(0, tail_len_995)
     ax.yaxis.set_major_locator(MaxNLocator('auto',integer=True))
     # ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
@@ -125,7 +125,7 @@ def draw_one_workload_pn_blocklen(ax,s_dicts,workload_name,full_ass,pos:tuple):
             ax.fill_between(x_val, sorted_setlists[i-1], sorted_setlists[i], color = my_color, alpha=alpha_set)
         else:
             ax.fill_between(x_val, np.zeros(all_set), sorted_setlists[i], color = my_color, alpha=alpha_set)
-    ax.set_ylabel('needed blocks')
+    ax.set_ylabel('needed blocks accesing the set')
     # ax.set_ylim(0, tail_len_995)
     ax.yaxis.set_major_locator(MaxNLocator('auto',integer=True))
     # ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
@@ -181,6 +181,67 @@ def draw_one_workload_pn_cyclelen(ax,s_dicts,workload_name,full_ass,pos:tuple):
         # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
         #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
 
+def draw_one_workload_pn_total_hitlen(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    ways_len_dicts = s_dicts['est_way_total_hitlen']
+    sorted_setlists = []
+    for i in range(1,full_ass+1):
+        sorted_setlists.append( sorted(ways_len_dicts[i]) )
+    tail_len_995 = sorted_setlists[-1][math.ceil(all_set * 0.995)]
+    x_val = np.arange(all_set)
+
+    alpha_set = 1
+    for i in range(full_ass):
+        est_way = i+1
+        my_color = leaf_yellow[-(i+1)]
+        ax.plot(sorted_setlists[i], label=f'est {est_way}ways',color = my_color,linewidth=1)
+        if i > 0:
+            ax.fill_between(x_val, sorted_setlists[i-1], sorted_setlists[i], color = my_color, alpha=alpha_set)
+        else:
+            ax.fill_between(x_val, np.zeros(all_set), sorted_setlists[i], color = my_color, alpha=alpha_set)
+    ax.set_ylabel('needed total hit blocks')
+    # ax.set_ylim(0, tail_len_995)
+    ax.yaxis.set_major_locator(MaxNLocator('auto',integer=True))
+    # ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+
+    # ax.set_xlabel('set number(sorted by est needed blocks)')
+    ax.set_xlabel('set number(sorted)')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 2, columnspacing=0.5, labelspacing=0.1)
+
+def draw_one_workload_pn_total_blocklen(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    ways_len_dicts = s_dicts['est_way_total_blocklen']
+
+    #sort w/o zip
+    sorted_setlists = []
+    for i in range(1,full_ass+1):
+        sorted_setlists.append( sorted(ways_len_dicts[i]) )
+
+    tail_len_995 = sorted_setlists[-1][math.ceil(all_set * 0.995)]
+    x_val = np.arange(all_set)
+
+    alpha_set = 1
+    for i in range(full_ass):
+        est_way = i+1
+        my_color = sunset_oranges[-(i+1)]
+        ax.plot(sorted_setlists[i], label=f'est {est_way}ways',color = my_color,linewidth=1)
+        if i > 0:
+            ax.fill_between(x_val, sorted_setlists[i-1], sorted_setlists[i], color = my_color, alpha=alpha_set)
+        else:
+            ax.fill_between(x_val, np.zeros(all_set), sorted_setlists[i], color = my_color, alpha=alpha_set)
+    ax.set_ylabel('needed total blocks')
+    # ax.set_ylim(0, tail_len_995)
+    ax.yaxis.set_major_locator(MaxNLocator('auto',integer=True))
+    # ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+
+    # ax.set_xlabel('set number(sorted by est needed blocks)')
+    ax.set_xlabel('set number(sorted)')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 2, columnspacing=0.5, labelspacing=0.1)
+
 class SetPositiveState:
     def __init__(self, set_id, full_ass, meta_bits=2):
         self.set_id = set_id
@@ -191,12 +252,14 @@ class SetPositiveState:
         self.positive_hitlen_record = np.zeros(full_ass+1)
         self.positive_blocklen_record = np.zeros(full_ass+1)
         self.positive_cyclelen_record = np.zeros(full_ass+1)
+        self.positive_total_hitlen = np.zeros(full_ass+1)
+        self.positive_total_blocklen = np.zeros(full_ass+1)
         self.hitlen = 0
         self.blocklen = 0
 
         self.meta_mask = (1 << meta_bits) - 1
 
-    def newHit(self, way_id, delta_stamp):
+    def newHit(self, way_id, delta_stamp, total_blocklen, total_hitlen):
         self.blocklen += 1
         self.hitlen += 1
         if not self.positive_bits[way_id]:
@@ -206,6 +269,8 @@ class SetPositiveState:
             self.positive_hitlen_record[self.positive_num] = self.hitlen
             self.positive_blocklen_record[self.positive_num] = self.blocklen
             self.positive_cyclelen_record[self.positive_num] = delta_stamp
+            self.positive_total_hitlen[self.positive_num] = total_hitlen
+            self.positive_total_blocklen[self.positive_num] = total_blocklen
 
     def newBlock(self, way_id, meta_datas):
         self.blocklen += 1
@@ -255,6 +320,8 @@ def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
 
         pn_states = [SetPositiveState(i,full_ass) for i in range(all_set)]
         stamp0 = 0
+        total_hit_len = 0
+        totla_block_len = 0
         for setidx,wayidx,isins,metas,stamp in f:
             setidx = int(setidx)
             wayidx = int(wayidx)
@@ -264,22 +331,29 @@ def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
             if stamp0 == 0:
                 stamp0 = stamp
             delta_stamp = stamp - stamp0
+            totla_block_len += 1
             if isins:
                 #insert block
                 pn_states[setidx].newBlock(wayidx,metas)
             else:
                 #hit block
-                pn_states[setidx].newHit(wayidx,delta_stamp)
+                total_hit_len += 1
+                pn_states[setidx].newHit(wayidx,delta_stamp,
+                                totla_block_len,total_hit_len)
 
         cur.close()
     s_dicts['est_used_ways'] = [1 for _ in range(all_set)]
     s_dicts['est_way_hitlen'] = {}
     s_dicts['est_way_blocklen'] = {}
     s_dicts['est_way_cyclelen'] = {}
+    s_dicts['est_way_total_hitlen'] = {}
+    s_dicts['est_way_total_blocklen'] = {}
     for w in range(1,full_ass+1):
         s_dicts['est_way_hitlen'][w] = np.zeros(all_set)
         s_dicts['est_way_blocklen'][w] = np.zeros(all_set)
         s_dicts['est_way_cyclelen'][w] = np.zeros(all_set)
+        s_dicts['est_way_total_hitlen'][w] = np.zeros(all_set)
+        s_dicts['est_way_total_blocklen'][w] = np.zeros(all_set)
 
 
     for idx in range(all_set):
@@ -290,6 +364,8 @@ def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
             s_dicts['est_way_hitlen'][pos_num][idx] = set_pn_state.positive_hitlen_record[used_pos_num]
             s_dicts['est_way_blocklen'][pos_num][idx] = set_pn_state.positive_blocklen_record[used_pos_num]
             s_dicts['est_way_cyclelen'][pos_num][idx] = set_pn_state.positive_cyclelen_record[used_pos_num]
+            s_dicts['est_way_total_hitlen'][pos_num][idx] = set_pn_state.positive_total_hitlen[used_pos_num]
+            s_dicts['est_way_total_blocklen'][pos_num][idx] = set_pn_state.positive_total_blocklen[used_pos_num]
 
     work_stats_dict[work] = s_dicts
 
@@ -344,6 +420,8 @@ if __name__ == '__main__':
         (draw_one_workload_pn_hitlen,'pn_est_hitlen_contour_{}.png'),
         (draw_one_workload_pn_blocklen,'pn_est_blocklen_contour_{}.png'),
         (draw_one_workload_pn_cyclelen,'pn_est_cyclelen_contour_{}.png'),
+        (draw_one_workload_pn_total_hitlen,'pn_est_total_hitlen_contour_{}.png'),
+        (draw_one_workload_pn_total_blocklen,'pn_est_total_blocklen_contour_{}.png'),
     ]
 
     for perf_prefix in perf_prefixs:
