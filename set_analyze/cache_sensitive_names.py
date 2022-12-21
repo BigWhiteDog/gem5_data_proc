@@ -119,7 +119,8 @@ conf_50M = {
                             },
 }
 
-use_conf = conf_20M
+# use_conf = conf_20M
+use_conf = conf_50M
 # cache_work_names = [
 #     'gcc_g23',
 #     'sphinx3',

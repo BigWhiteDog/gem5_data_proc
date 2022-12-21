@@ -318,7 +318,7 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,analyze_func,draw_one_func
 
 
 if __name__ == '__main__':
-    # use_conf = conf_50M
+    use_conf = conf_50M
     test_prefix = use_conf['test_prefix']
     base_dir = base_dir_format.format(test_prefix)
     pic_dir_path = f'set_analyze/{test_prefix}pics'
