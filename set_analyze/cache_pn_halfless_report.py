@@ -164,8 +164,9 @@ def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
         cur = con.cursor()
         f = cur.execute(all_access_query)
 
+        pn_start_positive = math.ceil(full_ass/2)
         pn_states = [SetPositiveState(i,full_ass,
-            start_postive=full_ass-1,
+            start_postive=pn_start_positive,
             decrease_f=1,
             ) for i in range(all_set)]
         stamp0 = 0
@@ -200,8 +201,12 @@ def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
         s_dicts['est_used_ways'][idx] = max(set_pn_state.positive_num,1)
         pcycle_dict = set_pn_state.positive_cyclelen_record
         pb_dict = set_pn_state.positive_total_blocklen
-        s_dicts['last_one_need_cycle'][idx] = pcycle_dict[set_pn_state.positive_num]
-        s_dicts['last_one_need_block'][idx] = pb_dict[set_pn_state.positive_num]
+        if set_pn_state.positive_num == pn_start_positive:
+            s_dicts['last_one_need_cycle'][idx] = s_dicts['cpu_num_cycles']
+            s_dicts['last_one_need_block'][idx] = s_dicts['l3_total_demand']
+        else:
+            s_dicts['last_one_need_cycle'][idx] = pcycle_dict[set_pn_state.positive_num]
+            s_dicts['last_one_need_block'][idx] = pb_dict[set_pn_state.positive_num]
 
     work_stats_dict[work] = s_dicts
 
