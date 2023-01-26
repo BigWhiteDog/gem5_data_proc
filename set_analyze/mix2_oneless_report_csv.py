@@ -44,8 +44,8 @@ def analyze_one_workload_dict(base_dir,workload_names,ncore=2):
         # ways[-1] as key
         dkey = ways[-1]
         if dkey == 'BaseAtdPolicy':
-            print(new_base)
-            print('11')
+            # print(new_base)
+            # print('11')
             # shutil.rmtree(new_base)
             continue
         if re.search(r'fullgrow(\d+)in16',dkey):
@@ -82,6 +82,9 @@ def analyze_one_workload_dict(base_dir,workload_names,ncore=2):
     get_test_re = re.compile(r'(\d+)MTest')
     get_grow_re = re.compile(r'grow(\d+)in(\d+)')
     get_fullgrow_re = re.compile(r'fullgrow(\d+)in(\d+)')
+
+    pd_dict['fullgrow_dict'] = {}
+
     for k in sorted(s_dicts.keys()):
         get_policy_res = get_policy_re.match(k)
         if get_policy_res:
@@ -89,6 +92,8 @@ def analyze_one_workload_dict(base_dir,workload_names,ncore=2):
             tt_s = get_policy_res.group(2)
             get_train_res = get_train_re.search(tt_s)
             new_key = policy
+            if policy in ['OneLessGrowTarget']:
+                continue
             if get_train_res:
                 train_size = get_train_res.group(1)
                 new_key += f'_{train_size}M_train'
@@ -101,9 +106,22 @@ def analyze_one_workload_dict(base_dir,workload_names,ncore=2):
             get_grow_res = get_grow_re.match(tt_s)
             if get_grow_res:
                 new_key += f'_grow{get_grow_res.group(1)}in{get_grow_res.group(2)}'
+                #skip part grow
+                continue
             get_fullgrow_res = get_fullgrow_re.match(tt_s)
             if get_fullgrow_res:
+                full_target = int(get_fullgrow_res.group(2))
+                if full_target != 32:
+                    continue
+                grow_target = int(get_fullgrow_res.group(1))
+                # pd_tmp_key = new_key + 'fullgrow_dict'
+                pd_tmp_key = 'fullgrow_dict'
+                pd_dict[pd_tmp_key][grow_target] = {}
+                for c in range(ncore):
+                    newipc = s_dicts[k][f'cpu{c}.ipc'][0]
+                    pd_dict[pd_tmp_key][grow_target][c] = newipc/static_cpuipcs[c]
                 new_key += f'_fullgrow{get_fullgrow_res.group(1)}in{get_fullgrow_res.group(2)}'
+                continue
             # if k in ['HitPreventMaskCsvPolicy'] or policy in ['FullAtd']:
             #     shutil.rmtree(path_dicts[k])
             for c in range(ncore):
@@ -120,6 +138,11 @@ if __name__ == '__main__':
     test_prefix = use_conf['test_prefix']
     perf_prefix = '95perf'
 
+    full_grow_dict = {}
+    work0names = use_conf['cache_work_names']
+    for w in work0names:
+        full_grow_dict[w] = {}
+
     base_dir = f'/nfs/home/zhangchuanqi/lvna/for_xs/catlog/mix2-qosfromstart-core0-{test_prefix}{perf_prefix}'
     worksname = os.listdir(base_dir) #like omnetpp-xalancbmk
     pd_dict_list = []
@@ -128,9 +151,42 @@ if __name__ == '__main__':
         if not os.path.isdir(word_dir):
             continue
         pd_dict = analyze_one_workload_dict(word_dir,work,ncore=ncore)
+        w0 = pd_dict['workload0']
+        w1 = pd_dict['workload1']
+        gd = pd_dict['fullgrow_dict']
+        full_grow_dict[w0][w1] = gd
+
         pd_dict_list.append(pd_dict)
 
-    pd_dict_list = sorted(pd_dict_list,key=lambda x:x['csv_speedup_cpu1'],reverse=True)
+    target_perf_list = [0.97,0.975,0.98,0.985,0.99]
+    for perf in target_perf_list:
+        find_grow_target = {}
+        print(f'perf:{perf}')
+        for w0 in full_grow_dict:
+            #for every w0 in full_grow_dict, find least grow target
+            res_dicts = full_grow_dict[w0]
+            for t in range(1,32):
+                satisfy = True
+                for w1 in res_dicts:
+                    s0= res_dicts[w1][t][0]
+                    s1= res_dicts[w1][t][1]
+                    if s0 < perf:
+                        satisfy = False
+                        break
+                if satisfy:
+                    #t is the min satisfy grow target
+                    find_grow_target[w0] = t
+                    break
+            print(f'w0:{w0} find_grow_target:{find_grow_target[w0]}')
+        for p in pd_dict_list:
+            w0 = p['workload0']
+            w0t = find_grow_target[w0]
+            for c in range(ncore):
+                p[f'realOneWithTarget{perf}_speedup{c}'] = p['fullgrow_dict'][w0t][c]
+    for p in pd_dict_list:
+        p.pop('fullgrow_dict')
+
+    # pd_dict_list = sorted(pd_dict_list,key=lambda x:x['csv_speedup_cpu1'],reverse=True)
 
     mycolumns = ['workload','core0_setway']
     # atd_len = [10,15,20]
@@ -154,4 +210,4 @@ if __name__ == '__main__':
     #         mycolumns.append(cf.format(c))
 
     df = pd.DataFrame(pd_dict_list)
-    df.to_csv('mix2_csvmask_report.csv',index=False,float_format="%.5f")
+    df.to_csv('set_analyze/mix2_oneless_report.csv',index=False,float_format="%.5f")
