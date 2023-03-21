@@ -43,7 +43,7 @@ def draw_one_workload_ipc(ax,s_dicts,workload_names):
     ax.plot(sorted_keys,nipcs,marker='o',label='ipc')
 
     slowdown_2 = nipcs[-2]
-    if (slowdown_2<0.95):
+    if (slowdown_2<0.95 and nipcs[-1]<0.95):
         # print(f'{workload_names} get slowdown {slowdown_2:.3} 2way')
         fulfill85_way = 8
         fulfill90_way = 8
@@ -109,7 +109,7 @@ def draw_by_func(base_dir,n_rows,worksname,draw_one_func,fig_name):
 
 if __name__ == '__main__':
     # base_dir = '/nfs/home/zhangchuanqi/lvna/for_xs/catlog/single-profiling/'
-    use_conf = conf_50M
+    use_conf = conf_100M
     test_prefix = use_conf['test_prefix']
     base_dir = base_dir_format.format(test_prefix)
     pic_dir_path = f'set_analyze/{test_prefix}pics'

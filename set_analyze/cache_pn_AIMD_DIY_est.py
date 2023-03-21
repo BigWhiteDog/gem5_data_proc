@@ -36,8 +36,7 @@ from set_analyze.my_diff_color import *
 all_set = 16384
 
 def draw_one_workload_origin_pn_half(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    # labels = ['min_ways_no_extra_miss','est_used_ways','half_access_est_ways','half_cycle_est_ways']
-    labels = ['min_ways_no_extra_miss','est_used_ways']
+    labels = ['min_ways_no_extra_miss','est_used_ways','half_access_est_ways','half_cycle_est_ways']
     # zip and sort
     full_lists = [s_dicts[k] for k in labels]
     sorted_zip_setlist = sorted(zip(*full_lists))
@@ -51,7 +50,7 @@ def draw_one_workload_origin_pn_half(ax,s_dicts,workload_name,full_ass,pos:tuple
     ax.plot(s_extra0_list, label='min real est ways', color = extra0_list_color,linewidth=1)
     ax.fill_between(x_val, full_ass_vals, s_extra0_list, color = extra0_list_color, alpha=alpha_set)
 
-    for i in range(1, len(labels)):
+    for i in range(1,4):
         extra_i_list = sorted_setlists[i]
         extra_i_color = contrasting_orange[6+i]
         ax.plot(extra_i_list, label=labels[i], color=extra_i_color,linewidth=1.5)
@@ -153,8 +152,8 @@ def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
         f = cur.execute(all_access_query)
 
         pn_states = [SetPositiveState(i,full_ass,
-            start_postive=max(1,full_ass-2),
-            decrease_f=1,
+            start_postive=math.ceil(full_ass/2),
+            decrease_f=0.0625,
             ) for i in range(all_set)]
         stamp0 = 0
         total_hit_len = 0
@@ -252,7 +251,7 @@ if __name__ == '__main__':
     waydict_format = 'cache_work_{}ways'
     perf_prefixs = ['90perf','95perf','full']
     draw_picformat = [
-        (draw_one_workload_origin_pn_half,'pn_AIMD_est_oneless_{}.png',os.path.join(csv_dir_path,'min0way_{}')),
+        (draw_one_workload_origin_pn_half,'pn_AIMD_est_half_{}.png',os.path.join(csv_dir_path,'min0way_{}')),
     ]
 
     for perf_prefix in perf_prefixs:

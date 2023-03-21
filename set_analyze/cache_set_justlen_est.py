@@ -77,19 +77,21 @@ def draw_one_workload_len_est(ax,s_dicts,workload_name,full_ass,pos:tuple):
     ax.fill_between(x_val, full_ass_vals, s_extra1_list, color = extra1_list_color, alpha=alpha_set)
     ax.plot(s_extra0_list, label='min ways no extra miss', color = extra0_list_color,linewidth=1)
     ax.fill_between(x_val, full_ass_vals, s_extra0_list, color = extra0_list_color, alpha=alpha_set)
-    ax.plot(s_hitlen_list, label='hit len', color = hitlen_list_color,linewidth=2)
-    ax.plot(s_accesslen_list, label='access len', color = accesslen_list_color,linewidth=2)
 
-    ax.set_ylabel('needed ways/blocks')
-    ax.set_ylim(0, tail_accesslen_995)
+    ax.set_ylabel('needed ways')
+
     ax.yaxis.set_major_locator(MaxNLocator('auto',integer=True))
-    # ax.set_ylim(0, 8)
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.set_ylim(0, 8)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
 
     ax2 = ax.twinx()
+    # ax2.plot(s_hitlen_list, label='hit len', color = hitlen_list_color,linewidth=2)
+    # ax2.plot(s_accesslen_list, label='access len', color = accesslen_list_color,linewidth=2)
+    # ax2.set_ylabel('needed blocks')
+    # ax2.set_ylim(0, tail_accesslen_995)
     ax2.plot(s_cycle_list, label='cycle', color = contrasting_orange[8],linewidth=1)
     ax2.set_ylabel('needed cycle')
-    ax2.set_ylim(0, tail_cycle_995)
+    # ax2.set_ylim(0, tail_cycle_995)
     ax2.yaxis.set_major_locator(MaxNLocator('auto',integer=True))
 
     ax.set_xlabel('set idx (sorted by atd min 0miss ways)')
@@ -187,6 +189,20 @@ def draw_one_workload_cycle_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
         # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
         #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
 
+def draw_one_workload_trace_scatter(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    tag_t_list = s_dicts['tag_trace']
+    time_t_list = s_dicts['timestamp_trace']
+    ax.scatter(time_t_list,tag_t_list, s=0.1, label='tag trace', color = contrasting_orange[5])
+    ax.set_xlabel('cycles')
+    ax.set_ylabel('tag')
+    ax.set_yscale('log')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
+        # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
+        #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
+
 
 def analyze_workload_len_est(work_stats_dict,work,work_dir,full_ass):
     if work in work_stats_dict:
@@ -199,6 +215,8 @@ def analyze_workload_len_est(work_stats_dict,work,work_dir,full_ass):
     reach_hit_cycles = [np.zeros(full_ass) for _ in range(all_set)]
     set_hit_cnts = np.zeros(all_set)
     set_access_cnts = np.zeros(all_set)
+    tag_trace = []
+    timestamp_trace = []
 
     partsname = os.listdir(work_dir) #like l3-1
     for part in partsname:
@@ -229,6 +247,8 @@ def analyze_workload_len_est(work_stats_dict,work,work_dir,full_ass):
             if stamp0 == 0:
                 stamp0 = stamp
             delta_stamp = stamp - stamp0
+            tag_trace.append(tag)
+            timestamp_trace.append(delta_stamp)
             ls = lru_states[idx]
             fi = filter(lambda x: x[1] == tag, ls)
             res = list(fi)
@@ -263,6 +283,8 @@ def analyze_workload_len_est(work_stats_dict,work,work_dir,full_ass):
     s_dicts['no_extra_miss_access_len'] = [0 for _ in range(all_set)]
     s_dicts['no_extra_miss_cycle'] = [0 for _ in range(all_set)]
     
+    s_dicts['tag_trace'] = tag_trace
+    s_dicts['timestamp_trace'] = timestamp_trace
 
     for idx in range(all_set):
         hitpos_cnts = lru_hit_cnts[idx]
@@ -324,51 +346,26 @@ if __name__ == '__main__':
     pic_dir_path = f'set_analyze/{test_prefix}pics'
     os.makedirs(pic_dir_path, exist_ok=True)
     worksname = use_conf['cache_work_names'] #like mcf
-    cache_work_90perfways = use_conf['cache_work_90perfways']
-    cache_work_95perfways = use_conf['cache_work_95perfways']
-    cache_work_fullways = use_conf['cache_work_fullways']
 
     n_works = len(worksname)
     n_rows = math.ceil(n_works/4)
 
-    w_dict_90 = draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
-        analyze_func=analyze_workload_len_est,
-        draw_one_func=draw_one_workload_len_est,fig_name=os.path.join(pic_dir_path,'est_justlen_90perf_dis.png'))
-    draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
-        analyze_func=analyze_workload_len_est,
-        draw_one_func=draw_one_workload_len_est_hist,
-        fig_name=os.path.join(pic_dir_path,'est_lencdf_90perf_dis.png'),
-        input_stats_dict=w_dict_90)
-    draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
-        analyze_func=analyze_workload_len_est,
-        draw_one_func=draw_one_workload_cycle_hist,
-        fig_name=os.path.join(pic_dir_path,'est_cyclecdf_90perf_dis.png'),
-        input_stats_dict=w_dict_90)
+    waydict_format = 'cache_work_{}ways'
+    perf_prefixs = ['90perf','95perf','full']
+    draw_picformat = [
+        (draw_one_workload_len_est,'est_justlen_{}_dis.png'),
+        (draw_one_workload_len_est_hist,'est_lencdf_{}_dis.png'),
+        (draw_one_workload_cycle_hist,'est_cyclecdf_{}_dis.png'),
+        (draw_one_workload_trace_scatter,'tag_trace_{}_dis.png'),
+    ]
 
-    w_dict_95 = draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
-        analyze_func=analyze_workload_len_est,
-        draw_one_func=draw_one_workload_len_est,fig_name=os.path.join(pic_dir_path,'est_justlen_95perf_dis.png'))
-    draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
-        analyze_func=analyze_workload_len_est,
-        draw_one_func=draw_one_workload_len_est_hist,
-        fig_name=os.path.join(pic_dir_path,'est_lencdf_95perf_dis.png'),
-        input_stats_dict=w_dict_95)
-    draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
-        analyze_func=analyze_workload_len_est,
-        draw_one_func=draw_one_workload_cycle_hist,
-        fig_name=os.path.join(pic_dir_path,'est_cyclecdf_95perf_dis.png'),
-        input_stats_dict=w_dict_95)
-
-    w_dict_full = draw_db_by_func(base_dir,n_rows,cache_work_fullways,
-        analyze_func=analyze_workload_len_est,
-        draw_one_func=draw_one_workload_len_est,fig_name=os.path.join(pic_dir_path,'est_justlen_dis.png'))
-    draw_db_by_func(base_dir,n_rows,cache_work_fullways,
-        analyze_func=analyze_workload_len_est,
-        draw_one_func=draw_one_workload_len_est_hist,
-        fig_name=os.path.join(pic_dir_path,'est_lencdf_dis.png'),
-        input_stats_dict=w_dict_full)
-    draw_db_by_func(base_dir,n_rows,cache_work_fullways,
-        analyze_func=analyze_workload_len_est,
-        draw_one_func=draw_one_workload_cycle_hist,
-        fig_name=os.path.join(pic_dir_path,'est_cyclecdf_dis.png'),
-        input_stats_dict=w_dict_full)
+    for perf_prefix in perf_prefixs:
+        waydict_name = waydict_format.format(perf_prefix)
+        waydict = use_conf[waydict_name]
+        ret_dict = {}
+        for draw_func,pic_name_format in draw_picformat:
+            draw_db_by_func(base_dir,n_rows,waydict,
+                analyze_func=analyze_workload_len_est,
+                draw_one_func=draw_func,
+                fig_name=os.path.join(pic_dir_path,pic_name_format.format(perf_prefix)),
+                input_stats_dict=ret_dict)

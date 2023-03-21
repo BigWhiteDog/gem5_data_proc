@@ -35,38 +35,70 @@ from set_analyze.my_diff_color import *
 
 all_set = 16384
 
-def draw_one_workload_origin_pn_half(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    # labels = ['min_ways_no_extra_miss','est_used_ways','half_access_est_ways','half_cycle_est_ways']
-    labels = ['min_ways_no_extra_miss','est_used_ways']
-    # zip and sort
-    full_lists = [s_dicts[k] for k in labels]
-    sorted_zip_setlist = sorted(zip(*full_lists))
-    sorted_setlists = list(zip(*sorted_zip_setlist))
+def getTruePositive(standard_set,est_set):
+    tmp = np.logical_and(standard_set,est_set)
+    return tmp.sum()/all_set
+def getFalsePositive(standard_set,est_set):
+    tmp = np.logical_and(standard_set,np.logical_not(est_set))
+    return tmp.sum()/all_set
+def getFalseNegative(standard_set,est_set):
+    tmp = np.logical_and(np.logical_not(standard_set),est_set)
+    return tmp.sum()/all_set
+def getTrueNegative(standard_set,est_set):
+    tmp = np.logical_and(np.logical_not(standard_set),np.logical_not(est_set))
+    return tmp.sum()/all_set
 
-    x_val = np.arange(all_set)
-    full_ass_vals = np.full(all_set,full_ass)
-    extra0_list_color = contrasting_orange[6]
-    alpha_set = 0.8
-    s_extra0_list = sorted_setlists[0]
-    ax.plot(s_extra0_list, label='min real est ways', color = extra0_list_color,linewidth=1)
-    ax.fill_between(x_val, full_ass_vals, s_extra0_list, color = extra0_list_color, alpha=alpha_set)
+def draw_one_workload_pnlast_f1(ax,s_dicts,workload_name,full_ass,pos:tuple):
 
-    for i in range(1, len(labels)):
-        extra_i_list = sorted_setlists[i]
-        extra_i_color = contrasting_orange[6+i]
-        ax.plot(extra_i_list, label=labels[i], color=extra_i_color,linewidth=1.5)
+    factor = s_dicts['factor']
+    stride_size = s_dicts['stride_size']
+    pn_est_bits = s_dicts['pn_est_bits']
+    stride_est_bits = s_dicts['stride_est_bits']
+    stride_est_bits = np.tile(stride_est_bits, factor)
+    cont_est_bits = s_dicts['cont_est_bits']
+    cont_est_bits = np.repeat(cont_est_bits, factor)
+    sandc_est_bits = np.logical_and(stride_est_bits,cont_est_bits)
+    real_ways = s_dicts['min_ways_no_extra_miss']
+    real_full_bits = np.array([ i == full_ass for i in real_ways])
+    labels = ['pn','stride','cont', 's_and_c']
+    est_bits = [pn_est_bits,stride_est_bits,cont_est_bits,sandc_est_bits]
     
+    f1_func = [getTruePositive,getFalsePositive,getFalseNegative,getTrueNegative]
+    f1_labels = ['TP','FP','FN','TN']
 
-    ax.set_ylabel('needed ways')
-    ax.set_ylim(0, 8)
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
-    ax.set_xlabel('set number(sorted by min used ways)')
+    xvals = np.arange(len(labels))
+    width = 0.2
+    bots = np.zeros(len(labels))
+    color = 0
+    for f1_f,f1_label in zip(f1_func,f1_labels):
+        vals = []
+        for est_bit in est_bits:
+            vals.append(f1_f(real_full_bits,est_bit))
+        ax.bar(xvals,vals,width,bottom=bots,label=f1_label,color = contrasting_orange[color])
+        bots += vals
+        color += 1
+    ax.set_xticks(xvals)
+    ax.set_xticklabels(labels)
     ax.set_title(f'{workload_name}')
+    ax.set_ylabel('rate')
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.05))
+
     if pos == (0,0):
-        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
-            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
-        # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
-        #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
+        bar_patch = [Patch(color=contrasting_orange[i],label=f'{f1_labels[i]}')
+                    for i in range(len(f1_labels))]
+        ax.legend(handles = bar_patch, shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.1, ncol = 2, columnspacing=0.5, labelspacing=0.2)
+
+def draw_one_workload_last_way_trace_scatter(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    grow_trace = s_dicts['grow_trace']
+    time_t_list = [g[0] for g in grow_trace]
+    tag_t_list = [g[1] for g in grow_trace]
+    ax.scatter(time_t_list,tag_t_list, s=0.1, label='setidx trace', color = contrasting_orange[4])
+    ax.set_xlabel('cycles')
+    ax.set_ylabel('setidx')
+    ax.set_xlim(0,s_dicts['cpu_num_cycles'])
+    ax.set_title(f'{workload_name}')            
 
 class SetPositiveState:
     def __init__(self, set_id, full_ass, meta_bits=2, start_postive=1, decrease_f=0.5):
@@ -122,9 +154,7 @@ class SetPositiveState:
             if max_positive_idx >= 0:
                 self.positive_bits[max_positive_idx] = False
             self.positive_bits[way_id] = True
-                    
 
-            
 
 def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
     if work in work_stats_dict:
@@ -146,54 +176,79 @@ def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
             continue
 
         new_base = os.path.join(work_dir,part)
+        with open(os.path.join(new_base,f'1period.json'),'r') as f:
+            one_dict = json.load(f)
+        
+        another_part = os.path.join(work_dir,f'l3-{ways-1}')
+        with open(os.path.join(another_part,f'1period.json'),'r') as f:
+            another_dict = json.load(f)
+
+        s_dicts['oneless_demand_hits'] = another_dict['l3.demandHits'][0]
+        s_dicts['oneless_demand_misses'] = another_dict['l3.demandMisses'][0]
+        s_dicts['oneless_ipc'] = another_dict['cpu.ipc'][0]
+        
+        s_dicts['ipc'] = one_dict['cpu.ipc'][0]
+        s_dicts['cpu_num_cycles'] = one_dict['cpu.numCycles'][0]
+        s_dicts['l3_total_demand'] = one_dict['l3.demandHits'][0] + one_dict['l3.demandMisses'][0]
+
+        # print(f'work {work} ways {ways} totaldemand {s_dicts["l3_total_demand"]} totalhits {one_dict["l3.demandHits"][0]}'\
+        #     f' totalmisses {one_dict["l3.demandMisses"][0]}')
+
         db_path = os.path.join(new_base,'hm.db')
-        all_access_query = 'SELECT SETIDX,WAYIDX,ISINS,METAS,STAMP FROM HitPosTrace;'
         con = sqlite3.connect(db_path)
         cur = con.cursor()
+        stamp0_query = 'SELECT min(STAMP),max(STAMP)-min(STAMP) from HitMissTrace;'
+        f = cur.execute(stamp0_query)
+        stamp0,delta_stamp_last = f.fetchone()
+        stamp0 = int(stamp0)
+
+        all_access_query = 'SELECT SETIDX,WAYIDX,ISINS,METAS,VALIDMASK,STAMP FROM HitPosTrace ORDER BY ID;'
         f = cur.execute(all_access_query)
 
-        pn_states = [SetPositiveState(i,full_ass,
-            start_postive=max(1,full_ass-2),
-            decrease_f=1,
-            ) for i in range(all_set)]
-        stamp0 = 0
-        total_hit_len = 0
-        totla_block_len = 0
+        pn_start_positive = full_ass -1
+        pn_est_bits = np.full(all_set,False)
+        factor = 32
+        stride_size = all_set // factor
+        stride_est_bits = np.full(all_set//factor, False)
+        cont_est_bits = np.full(all_set//factor, False)
+        find_sets = set()
+        grow_trace = []
+        hitlast_cnt = 0
         for setidx,wayidx,isins,metas,stamp in f:
             setidx = int(setidx)
             wayidx = int(wayidx)
             isins = bool(int(isins))
-            metas = int(metas)
             stamp = int(stamp)
-            if stamp0 == 0:
-                stamp0 = stamp
             delta_stamp = stamp - stamp0
-            totla_block_len += 1
             if isins:
-                #insert block
-                pn_states[setidx].newBlock(wayidx,metas)
+                pass
             else:
                 #hit block
-                total_hit_len += 1
-                pn_states[setidx].newHit(wayidx,delta_stamp,
-                                totla_block_len,total_hit_len)
-
+                if wayidx >= pn_start_positive:
+                    if setidx not in find_sets:
+                    # if True:
+                        find_sets.add(setidx)
+                        grow_trace.append((delta_stamp,setidx))
+                    hitlast_cnt += 1
+                    pn_est_bits[setidx] = True
+                    stride_est_bits[setidx % stride_size] = True
+                    cont_est_bits[setidx // factor] = True
+        print(f'work {work} ways {ways} totaldemand {s_dicts["l3_total_demand"]} totalhits {one_dict["l3.demandHits"][0]}'\
+            f' totalmisses {one_dict["l3.demandMisses"][0]} ipc {s_dicts["ipc"]}'\
+            f' hitlast_cnt {hitlast_cnt} grow_cnt {len(grow_trace)}'\
+            f' oneless_demand_hits {s_dicts["oneless_demand_hits"]} oneless_demand_misses {s_dicts["oneless_demand_misses"]}'\
+                f' oneless_ipc {s_dicts["oneless_ipc"]}')
         cur.close()
-    s_dicts['est_used_ways'] = [1 for _ in range(all_set)]
-    s_dicts['half_cycle_est_ways'] = [1 for _ in range(all_set)]
-    s_dicts['half_access_est_ways'] = [1 for _ in range(all_set)]
 
-    for idx in range(all_set):
-        set_pn_state = pn_states[idx]
-        s_dicts['est_used_ways'][idx] = max(set_pn_state.positive_num,1)
-        pcycle_dict = set_pn_state.positive_cyclelen_record
-        s_dicts['half_cycle_est_ways'][idx] = max(
-            filter(lambda k: pcycle_dict[k] <= delta_stamp/2 , pcycle_dict)
-        )
-        pblocklen_dict = set_pn_state.positive_total_blocklen
-        s_dicts['half_access_est_ways'][idx] = max(
-            filter(lambda k: pblocklen_dict[k] <= totla_block_len/2 , pblocklen_dict)
-        )
+    # stride_tmp = pn_est_bits.reshape(stride_size,factor)
+    # stride_est_bits = np.any(stride_tmp,axis=1)
+
+    s_dicts['factor'] = factor
+    s_dicts['stride_size'] = stride_size
+    s_dicts['pn_est_bits'] = pn_est_bits
+    s_dicts['stride_est_bits'] = stride_est_bits
+    s_dicts['cont_est_bits'] = cont_est_bits
+    s_dicts['grow_trace'] = grow_trace
 
     work_stats_dict[work] = s_dicts
 
@@ -219,10 +274,11 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,analyze_func,draw_one_func
         analyze_func(work_stats_dict,work,work_dir,full_ass)
         s_dicts = work_stats_dict[work]
         s_dicts['min_ways_no_extra_miss'] = []
-        csv_file = os.path.join(csv_top_dir,f'{work}.csv')
-        with open(csv_file,'r') as f:
-            for i in range(all_set):
-                s_dicts['min_ways_no_extra_miss'].append(int(f.readline().strip()))
+        if csv_top_dir is not None:
+            csv_file = os.path.join(csv_top_dir,f'{work}.csv')
+            with open(csv_file,'r') as f:
+                for i in range(all_set):
+                    s_dicts['min_ways_no_extra_miss'].append(int(f.readline().strip()))
         draw_one_func(ax_bar,s_dicts,work,full_ass,(fx,fy))     
 
     for i in range(len(worksname_waydict),n_rows*4):
@@ -250,17 +306,25 @@ if __name__ == '__main__':
     n_rows = math.ceil(n_works/4)
 
     waydict_format = 'cache_work_{}ways'
-    perf_prefixs = ['90perf','95perf','full']
+    # perf_prefixs = ['90perf','95perf','full']
+    perf_prefixs = ['95perf']
     draw_picformat = [
-        (draw_one_workload_origin_pn_half,'pn_AIMD_est_oneless_{}.png',os.path.join(csv_dir_path,'min0way_{}')),
+        # (draw_one_workload_pnlast_cyclelen_hist,'pn_last_cyclelen_hist_{}.png',None),
+        # (draw_one_workload_pnlast_blocklen_hist,'pn_last_blocklen_hist_{}.png',None),
+        (draw_one_workload_pnlast_f1,'pn_last_compress_{}.png',os.path.join(csv_dir_path,'min0way_{}')),
+        (draw_one_workload_last_way_trace_scatter,'pn_last_way_trace_scatter_{}.png',None),
     ]
 
     for perf_prefix in perf_prefixs:
         waydict_name = waydict_format.format(perf_prefix)
         waydict = use_conf[waydict_name]
         ret_dict = {}
+        print(f'perf_prefix:{perf_prefix}')
         for draw_func,pic_name_format,csv_dir_format in draw_picformat:
-            csv_dir = csv_dir_format.format(perf_prefix)
+            if csv_dir_format is not None:
+                csv_dir = csv_dir_format.format(perf_prefix)
+            else:
+                csv_dir = None
             draw_db_by_func(base_dir,n_rows,waydict,
                 analyze_func=analyze_pn_lencycle_est,
                 draw_one_func=draw_func,

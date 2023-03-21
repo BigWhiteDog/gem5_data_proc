@@ -1,3 +1,4 @@
+import copy
 from genericpath import isdir
 import os
 import shutil
@@ -158,56 +159,58 @@ if __name__ == '__main__':
 
         pd_dict_list.append(pd_dict)
 
-    target_perf_list = [0.97,0.975,0.98,0.985,0.99]
-    for perf in target_perf_list:
-        find_grow_target = {}
-        print(f'perf:{perf}')
-        for w0 in full_grow_dict:
-            #for every w0 in full_grow_dict, find least grow target
-            res_dicts = full_grow_dict[w0]
-            for t in range(1,32):
-                satisfy = True
-                for w1 in res_dicts:
-                    s0= res_dicts[w1][t][0]
-                    s1= res_dicts[w1][t][1]
-                    if s0 < perf:
-                        satisfy = False
-                        break
-                if satisfy:
-                    #t is the min satisfy grow target
-                    find_grow_target[w0] = t
-                    break
-            print(f'w0:{w0} find_grow_target:{find_grow_target[w0]}')
-        for p in pd_dict_list:
-            w0 = p['workload0']
-            w0t = find_grow_target[w0]
-            for c in range(ncore):
-                p[f'realOneWithTarget{perf}_speedup{c}'] = p['fullgrow_dict'][w0t][c]
-    for p in pd_dict_list:
-        p.pop('fullgrow_dict')
+    # Create a Pandas Excel writer using XlsxWriter as the engine.
+    twriter = pd.ExcelWriter('set_analyze/ics23_allpolicy.xlsx', engine='xlsxwriter')
 
-    # pd_dict_list = sorted(pd_dict_list,key=lambda x:x['csv_speedup_cpu1'],reverse=True)
+    dflist = []
+    tstep_list = [1,2,4,8]
+    for tstep in tstep_list:
+        new_pd_list = copy.deepcopy(pd_dict_list)
+        target_perf_list = [0.97,0.975,0.98,0.985,0.99]
+        maxbuckets = 64//tstep
+        for perf in target_perf_list:
+            find_grow_target = {}
+            print(f'perf:{perf}')
+            for w0 in full_grow_dict:
+                #for every w0 in full_grow_dict, find least grow target
+                res_dicts = full_grow_dict[w0]
+                target_max_s1 = {}
+                for t in range(tstep,65,tstep):
+                    satisfy = True
+                    s1_max = 0
+                    s1_max_t = 0
+                    for w1 in res_dicts:
+                        s0= res_dicts[w1][t][0]
+                        s1= res_dicts[w1][t][1]
+                        if s0 < perf:
+                            satisfy = False
+                            break
+                        if s1 > s1_max:
+                            s1_max = s1
+                            s1_max_t = t
+                    if satisfy:
+                        #t is the min satisfy grow target
+                        # find_grow_target[w0] = t
+                        # break
+                        target_max_s1[t] = s1_max
+                final_t = max(target_max_s1, key=target_max_s1.get)
+                find_grow_target[w0] = final_t
+                print(f'w0:{w0} find_{maxbuckets}_grow_target:{find_grow_target[w0]//tstep}')
+            for p in new_pd_list:
+                w0 = p['workload0']
+                w0t = find_grow_target[w0]
+                for c in range(ncore):
+                    p[f'realOneWithTarget{perf}_speedup{c}'] = p['fullgrow_dict'][w0t][c]
+        for p in new_pd_list:
+            p.pop('fullgrow_dict')
 
-    mycolumns = ['workload','core0_setway']
-    # atd_len = [10,15,20]
-    # c_formats = [
-    #     'nopart_cpu{}.ipc',
-    #     'static_cpu{}.ipc',
-    #     # 'csv_cpu{}.ipc',
-    #     'csv_speedup_cpu{}',
-    # ]
-    # for l in atd_len:
-    #     # c_formats.append(f'atd{l}M_cpu{{}}.ipc')
-    #     c_formats.append(f'atd{l}M_speedup_cpu{{}}')
-    # # for l in atd_len:
-    #     # c_formats.append(f'fullatd{l}M_speedup_cpu{{}}')
-    # # for l in atd_len:
-    # #     c_formats.append(f'hpatd{l}M_speedup_cpu{{}}')
-    # for l in atd_len:
-    #     c_formats.append(f'fmatd{l}M_speedup_cpu{{}}')
-    # for cf in c_formats:
-    #     for c in range(ncore):
-    #         mycolumns.append(cf.format(c))
+        mycolumns = ['workload','core0_setway']
 
-    df = pd.DataFrame(pd_dict_list)
-    df.to_csv('set_analyze/mix2_oneless_report.csv',index=False,float_format="%.5f")
+        df = pd.DataFrame(new_pd_list)
+        df.to_csv(f'set_analyze/mix2_oneless_report{maxbuckets}.csv',index=False,float_format="%.5f")
+        df.to_excel(twriter, sheet_name=f'{maxbuckets}bucket')
+
+        grow_df = pd.DataFrame(find_grow_target,index=[0])
+        grow_df.to_excel(twriter, sheet_name=f'{maxbuckets}_target_in64')
+
+    twriter.close()

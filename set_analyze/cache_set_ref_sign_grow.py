@@ -42,8 +42,7 @@ tail_set = int(0.001*all_set)
 
 def draw_memsign_bar(ax,s_dicts,workload_name,full_ass,pos:tuple):
     all_signs_view = s_dicts['access_mem_signs'].values()
-    judge_far_it = filter(lambda x: x[1] != 0,all_signs_view)
-    s_signs = sorted(judge_far_it,key=lambda x:x[3],reverse=True)
+    s_signs = sorted(all_signs_view,key=lambda x:x[3],reverse=True)
 
     lenx = len(s_signs)
     xval = np.arange(1,lenx+1,1)
@@ -65,8 +64,7 @@ def draw_memsign_bar(ax,s_dicts,workload_name,full_ass,pos:tuple):
 
 def draw_pcsign_bar(ax,s_dicts,workload_name,full_ass,pos:tuple):
     all_signs_view = s_dicts['access_pc_signs'].values()
-    judge_far_it = filter(lambda x: x[1] != 0,all_signs_view)
-    s_signs = sorted(judge_far_it,key=lambda x:x[3],reverse=True)
+    s_signs = sorted(all_signs_view,key=lambda x:x[3],reverse=True)
 
     lenx = len(s_signs)
     xval = np.arange(1,lenx+1,1)
@@ -133,7 +131,7 @@ def draw_pcsign_maynothit_bar(ax,s_dicts,workload_name,full_ass,pos:tuple):
         ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
             borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
 
-def report_csvsum_memsign_farhit(usepd,s_dicts,workload_name,full_ass):
+def report_csvsum_memsign_growhit(usepd,s_dicts,workload_name,full_ass):
     hitpos_set_records = s_dicts['hitpos_stamp_record']
 
     new_dict = {}
@@ -143,11 +141,11 @@ def report_csvsum_memsign_farhit(usepd,s_dicts,workload_name,full_ass):
     tmp_pd = pd.DataFrame(new_dict,index=[0])
     return pd.concat([usepd,tmp_pd],ignore_index=True)
 
-def draw_pcsign_farhit_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    phit_hist, phit_bin_edges = s_dicts['pc_predict_hit_num_when_farhit']
+def draw_pcsign_growhit_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    phit_hist, phit_bin_edges = s_dicts['pc_predict_hit_num_when_growhit']
     phit_hist = np.array(phit_hist)
     phit_bin_edges = np.array(phit_bin_edges)
-    pnhit_hist, pnhit_bin_edges = s_dicts['pc_predict_nearhit_num_when_farhit']
+    pnhit_hist, pnhit_bin_edges = s_dicts['pc_predict_nearhit_num_when_growhit']
     pnhit_hist = np.array(pnhit_hist)
     pnhit_bin_edges = np.array(pnhit_bin_edges)
 
@@ -162,18 +160,18 @@ def draw_pcsign_farhit_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
     newh = hist * np.diff(bin_edges)
     ax.bar( xval[:-1] + bwidth/2 , hist, label='pc predict nearhit nums', color = contrasting_orange[1], width = bwidth)
 
-    ax.set_ylabel('portion of farhits')
+    ax.set_ylabel('portion of growhits')
     ax.set_xlabel('number of blocks in a set')
     ax.set_title(f'{workload_name}')
     if pos == (0,0):
         ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
             borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
 
-def draw_memsign_farhit_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    phit_hist, phit_bin_edges = s_dicts['mem_predict_hit_num_when_farhit']
+def draw_memsign_growhit_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    phit_hist, phit_bin_edges = s_dicts['mem_predict_hit_num_when_growhit']
     phit_hist = np.array(phit_hist)
     phit_bin_edges = np.array(phit_bin_edges)
-    pnhit_hist, pnhit_bin_edges = s_dicts['mem_predict_nearhit_num_when_farhit']
+    pnhit_hist, pnhit_bin_edges = s_dicts['mem_predict_nearhit_num_when_growhit']
     pnhit_hist = np.array(pnhit_hist)
     pnhit_bin_edges = np.array(pnhit_bin_edges)
 
@@ -188,7 +186,7 @@ def draw_memsign_farhit_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
     newh = hist * np.diff(bin_edges)
     ax.bar( xval[:-1] + bwidth/2 , hist, label='mem predict nearhit nums', color = contrasting_orange[4], width = bwidth)
 
-    ax.set_ylabel('portion of farhits')
+    ax.set_ylabel('portion of growhits')
     ax.set_xlabel('number of blocks in a set')
     ax.set_title(f'{workload_name}')
     if pos == (0,0):
@@ -199,8 +197,8 @@ class SetLRUStates:
     def __init__(self, set_id:int, full_ass:int, pc_sign_dict:dict, mem_sign_dict:dict):
         self.set_id = set_id
         self.full_ass = full_ass
-        #when hit pos >= half_full_ass, it is a mid reref
-        self.half_full_ass = full_ass - 1
+        #when hit pos >= now_ass, it is a grow reref
+        self.now_ass = 1
         self.pc_sign_dict = pc_sign_dict
         self.mem_sign_dict = mem_sign_dict
         self.mru_list = list()
@@ -209,10 +207,10 @@ class SetLRUStates:
         #record access to judge reref
         self.reached_tags = set()
         #record stats for far hit
-        self.pc_predict_hit_num_when_farhit = []
-        self.pc_predict_nearhit_num_when_farhit = []
-        self.mem_predict_hit_num_when_farhit = []
-        self.mem_predict_nearhit_num_when_farhit = []
+        self.pc_predict_hit_diff_ingrow_when_growhit = []
+        self.pc_predict_nearhit_diff_ingrow_when_growhit = []
+        self.mem_predict_hit_diff_ingrow_when_growhit = []
+        self.mem_predict_nearhit_diff_ingrow_when_growhit = []
     
     def build_mem_sign(self, tag:int):
         #build mem signature
@@ -220,7 +218,7 @@ class SetLRUStates:
 
     def check_sign_morehit(self, target_dict, sign):
         if sign in target_dict:
-            # 2 * rerefmiss < total refcnt
+            # 2 * miss < total refcnt
             if target_dict[sign][2] * 2 < target_dict[sign][3]:
                 return True
         return False
@@ -236,15 +234,15 @@ class SetLRUStates:
             target_dict[sign][value_index] += 1
             target_dict[sign][3] += 1
         else:
-            # near hit, far hit, miss, total refcnt
+            # near hit, grow hit, miss, total refcnt
             target_dict[sign] = [0,0,0,1]
             target_dict[sign][value_index] = 1
 
 
     def record_sign_hit(self, tag, pc, hitpos):
         mem_sign = self.build_mem_sign(tag)
-        if hitpos >= self.half_full_ass:
-            #far hit
+        if hitpos >= self.now_ass:
+            #grow hit
             self.insert_sign_dict(self.mem_sign_dict, mem_sign, 1)
             self.insert_sign_dict(self.pc_sign_dict, pc, 1)
             
@@ -253,16 +251,21 @@ class SetLRUStates:
             total_pc_nearhit = 0
             total_mem_hit = 0
             total_mem_nearhit = 0
-            for t in self.mru_list:
+            for i in range(self.now_ass):
+                t = self.mru_list[i]
                 pc_hit,pc_nearhit,mem_hit,mem_nearhit = self.tag_sign_bits_dict[t]
                 total_pc_hit += int(pc_hit)
                 total_pc_nearhit += int(pc_nearhit)
                 total_mem_hit += int(mem_hit)
                 total_mem_nearhit += int(mem_nearhit)
-            self.pc_predict_hit_num_when_farhit.append(total_pc_hit)
-            self.pc_predict_nearhit_num_when_farhit.append(total_pc_nearhit)
-            self.mem_predict_hit_num_when_farhit.append(total_mem_hit)
-            self.mem_predict_nearhit_num_when_farhit.append(total_mem_nearhit)
+            diff_pc_hit = self.now_ass - total_pc_hit
+            diff_pc_nearhit = self.now_ass - total_pc_nearhit
+            diff_mem_hit = self.now_ass - total_mem_hit
+            diff_mem_nearhit = self.now_ass - total_mem_nearhit
+            self.pc_predict_hit_diff_ingrow_when_growhit.append(diff_pc_hit)
+            self.pc_predict_nearhit_diff_ingrow_when_growhit.append(diff_pc_nearhit)
+            self.mem_predict_hit_diff_ingrow_when_growhit.append(diff_mem_hit)
+            self.mem_predict_nearhit_diff_ingrow_when_growhit.append(diff_mem_nearhit)
         else:
             #near hit
             self.insert_sign_dict(self.mem_sign_dict, mem_sign, 0)
@@ -289,6 +292,9 @@ class SetLRUStates:
             hit_pos = ls.index(tag)
             #record hit pos stamp
             self.record_sign_hit(tag, pc, hit_pos)
+            #grow hit if hit pos far
+            if hit_pos >= self.now_ass:
+                self.now_ass += 1
             #modify lru
             ls.remove(tag)
             ls.insert(0,tag)
@@ -298,12 +304,15 @@ class SetLRUStates:
                 evict_tag = ls.pop()
                 self.tag_sign_bits_dict.pop(evict_tag)
             ls.insert(0,tag)
+            '''
             if tag in self.reached_tags:
                 #reref, record miss
                 self.record_sign_miss(tag, pc)
             else:
                 #first time
                 self.reached_tags.add(tag)
+            '''
+            self.record_sign_miss(tag, pc)
         #update tag sign bits
         self.tag_sign_bits_dict[tag] = self.find_sign_bits(tag, pc)
 
@@ -349,14 +358,14 @@ def analyze_workload_reuse(work_stats_dict,work,work_dir,full_ass):
 
     xval = np.arange(0,full_ass+1,1)
 
-    fit = functools.reduce(operator.concat, map(lambda x:x.pc_predict_hit_num_when_farhit, reref_states), [])
-    s_dicts['pc_predict_hit_num_when_farhit'] = [a.tolist() for a in np.histogram(list(fit),bins=xval,density=True)]
-    fit = functools.reduce(operator.concat, map(lambda x:x.pc_predict_nearhit_num_when_farhit, reref_states), [])
-    s_dicts['pc_predict_nearhit_num_when_farhit'] = [a.tolist() for a in np.histogram(list(fit),bins=xval,density=True)]
-    fit = functools.reduce(operator.concat, map(lambda x:x.mem_predict_hit_num_when_farhit, reref_states), [])
-    s_dicts['mem_predict_hit_num_when_farhit'] = [a.tolist() for a in np.histogram(list(fit),bins=xval,density=True)]
-    fit = functools.reduce(operator.concat, map(lambda x:x.mem_predict_nearhit_num_when_farhit, reref_states), [])
-    s_dicts['mem_predict_nearhit_num_when_farhit'] = [a.tolist() for a in np.histogram(list(fit),bins=xval,density=True)]
+    fit = functools.reduce(operator.concat, map(lambda x:x.pc_predict_hit_diff_ingrow_when_growhit, reref_states), [])
+    s_dicts['pc_predict_hit_num_when_growhit'] = [a.tolist() for a in np.histogram(list(fit),bins=xval,density=True)]
+    fit = functools.reduce(operator.concat, map(lambda x:x.pc_predict_nearhit_diff_ingrow_when_growhit, reref_states), [])
+    s_dicts['pc_predict_nearhit_num_when_growhit'] = [a.tolist() for a in np.histogram(list(fit),bins=xval,density=True)]
+    fit = functools.reduce(operator.concat, map(lambda x:x.mem_predict_hit_diff_ingrow_when_growhit, reref_states), [])
+    s_dicts['mem_predict_hit_num_when_growhit'] = [a.tolist() for a in np.histogram(list(fit),bins=xval,density=True)]
+    fit = functools.reduce(operator.concat, map(lambda x:x.mem_predict_nearhit_diff_ingrow_when_growhit, reref_states), [])
+    s_dicts['mem_predict_nearhit_num_when_growhit'] = [a.tolist() for a in np.histogram(list(fit),bins=xval,density=True)]
 
     work_stats_dict[work] = s_dicts
 
@@ -449,14 +458,14 @@ if __name__ == '__main__':
     waydict_format = 'cache_work_{}ways'
     perf_prefixs = ['90perf','95perf','full']
     drawF_picf_jsonf_csvF_csvsumf = [
-        # (draw_memsign_bar,'sign_mem_reref_bar_{}.png','sign_reref_{}.json',None,None),
-        # (draw_pcsign_bar,'sign_pc_reref_bar_{}.png','sign_reref_{}.json',None,None),
-        (draw_memsign_bar,'sign_mem_reref_faronly_bar_{}.png','sign_reref_{}.json',None,None),
-        (draw_pcsign_bar,'sign_pc_reref_faronly_bar_{}.png','sign_reref_{}.json',None,None),
-        (draw_memsign_farhit_hist,'sign_mem_farhit_hist_{}.png','sign_reref_{}.json',None,None),
-        (draw_pcsign_farhit_hist,'sign_pc_farhit_hist_{}.png','sign_reref_{}.json',None,None),
-        (draw_memsign_maynothit_bar,'sign_mem_maynothit_bar_{}.png','sign_reref_{}.json',None,None),
-        (draw_pcsign_maynothit_bar,'sign_pc_maynothit_bar_{}.png','sign_reref_{}.json',None,None),
+        # (draw_memsign_bar,'sign_mem_reref_bar_{}.png','sign_reref_grow_{}.json',None,None),
+        # (draw_pcsign_bar,'sign_pc_reref_bar_{}.png','sign_reref_grow_{}.json',None,None),
+        (draw_memsign_bar,'sign_mem_reref_bar_{}.png','sign_reref_grow_{}.json',None,None),
+        (draw_pcsign_bar,'sign_pc_reref_bar_{}.png','sign_reref_grow_{}.json',None,None),
+        (draw_memsign_growhit_hist,'sign_mem_growhit_hist_{}.png','sign_reref_grow_{}.json',None,None),
+        (draw_pcsign_growhit_hist,'sign_pc_growhit_hist_{}.png','sign_reref_grow_{}.json',None,None),
+        (draw_memsign_maynothit_bar,'sign_mem_maynothit_bar_{}.png','sign_reref_grow_{}.json',None,None),
+        (draw_pcsign_maynothit_bar,'sign_pc_maynothit_bar_{}.png','sign_reref_grow_{}.json',None,None),
     ]
 
     for perf_prefix in perf_prefixs:

@@ -51,8 +51,6 @@ def draw_one_workload_pnlast_cyclelen_hist(ax,s_dicts,workload_name,full_ass,pos
     if pos == (0,0):
         ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
             borderaxespad=0.2, ncol = 2, columnspacing=0.5, labelspacing=0.1)
-        # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
-        #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
 def draw_one_workload_pnlast_blocklen_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
     blocklens = s_dicts['last_one_need_block']
 
@@ -69,9 +67,134 @@ def draw_one_workload_pnlast_blocklen_hist(ax,s_dicts,workload_name,full_ass,pos
     if pos == (0,0):
         ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
             borderaxespad=0.2, ncol = 2, columnspacing=0.5, labelspacing=0.1)
-        # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
-        #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
+def draw_one_workload_pnlast_hitlen_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    blocklens = s_dicts['last_one_need_hit']
 
+    x_val = np.arange(all_set)
+
+    ax.hist(blocklens , bins = 'auto', label='last_one_need_hit',histtype = 'bar', 
+            density=True, cumulative=True,color = contrasting_orange[12],  linewidth=2)
+
+    ax.set_ylabel('portion of sets')
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
+    # ax.set_xlim(0,s_dicts['l3_total_demand'])
+    ax.set_xlabel('needed hits')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 2, columnspacing=0.5, labelspacing=0.1)
+
+def draw_one_workload_pnlast_tti_change(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    tti_record = s_dicts['tti_record']
+    #tti record is accescnt, hitcnt, growcnt
+    seperate_access = np.array([a for a,_,_ in tti_record])
+    seperate_hit = np.array([h for _,h,_ in tti_record])
+    seperate_grow = np.array([g for _,_,g in tti_record])
+
+    seperate_hitrate = seperate_hit / seperate_access
+    seperate_growrate = seperate_grow / seperate_access
+
+    seperate_growthhitrate = seperate_grow / seperate_hit
+
+    cumsum_access = seperate_access.cumsum()
+    cumsum_hit = seperate_hit.cumsum()
+    cumsum_grow = seperate_grow.cumsum()
+
+    cum_hitrate = cumsum_hit / cumsum_access
+    cum_growrate = cumsum_grow / cumsum_access
+
+    cum_growthhitrate = cumsum_grow / cumsum_hit
+
+    grow_setrate = seperate_grow / all_set
+    cumsum_grow_setrate = cumsum_grow / all_set
+
+    # ax.plot(seperate_hitrate, label='hitrate',color = contrasting_orange[0],  linewidth=2)
+    # ax.plot(seperate_growrate, label='growrate',color = contrasting_orange[1],  linewidth=2)
+
+    # ax.plot(cum_hitrate, label='cum_hitrate',color = contrasting_orange[2],  linewidth=2)
+    # ax.plot(cum_growrate, label='cum_growrate',color = contrasting_orange[3],  linewidth=2)
+
+    # ax.plot(seperate_growthhitrate, label='growthhitrate',color = contrasting_orange[0],  linewidth=2)
+    # ax.plot(cum_growthhitrate, label='cum_growthhitrate',color = contrasting_orange[1],  linewidth=2)
+
+    ax.plot(grow_setrate, label='grow_setrate',color = contrasting_orange[4],  linewidth=2)
+    ax.plot(cumsum_grow_setrate, label='cum_grow_setrate',color = contrasting_orange[5],  linewidth=2)
+
+    # ax.plot(normalize_grow_setrate, label='normalize_grow_setrate',color = contrasting_orange[6],  linewidth=2)
+
+    ax.set_ylabel('rate')
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.05))
+    ax.set_xlabel(f'number of interval (each is {s_dicts["tti_interval"]})')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 2, columnspacing=0.5, labelspacing=0.1)
+
+def draw_one_workload_pnlast_tti_growthchange(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    tti_record = s_dicts['tti_record']
+    #tti record is accescnt, hitcnt, growcnt
+    seperate_access = np.array([a for a,_,_ in tti_record])
+    seperate_hit = np.array([h for _,h,_ in tti_record])
+    seperate_grow = np.array([g for _,_,g in tti_record])
+
+    seperate_hitrate = seperate_hit / seperate_access
+    seperate_growrate = seperate_grow / seperate_access
+
+    seperate_growthhitrate = seperate_grow / seperate_hit
+
+    cumsum_access = seperate_access.cumsum()
+    cumsum_hit = seperate_hit.cumsum()
+    cumsum_grow = seperate_grow.cumsum()
+
+    cum_hitrate = cumsum_hit / cumsum_access
+    cum_growrate = cumsum_grow / cumsum_access
+
+    cum_growthhitrate = cumsum_grow / cumsum_hit
+
+    grow_setrate = seperate_grow / all_set
+    cumsum_grow_setrate = cumsum_grow / all_set
+
+    # ax.plot(seperate_hitrate, label='hitrate',color = contrasting_orange[0],  linewidth=2)
+    # ax.plot(seperate_growrate, label='growrate',color = contrasting_orange[1],  linewidth=2)
+
+    # ax.plot(cum_hitrate, label='cum_hitrate',color = contrasting_orange[2],  linewidth=2)
+    # ax.plot(cum_growrate, label='cum_growrate',color = contrasting_orange[3],  linewidth=2)
+
+    ax.plot(seperate_growthhitrate, label='growthhitrate',color = contrasting_orange[0],  linewidth=2)
+    ax.plot(cum_growthhitrate, label='cum_growthhitrate',color = contrasting_orange[1],  linewidth=2)
+
+    # ax.plot(grow_setrate, label='grow_setrate',color = contrasting_orange[4],  linewidth=2)
+    # ax.plot(cumsum_grow_setrate, label='cum_grow_setrate',color = contrasting_orange[5],  linewidth=2)
+
+    # ax.plot(normalize_grow_setrate, label='normalize_grow_setrate',color = contrasting_orange[6],  linewidth=2)
+
+    ax.set_ylabel('rate')
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
+    ax.set_xlabel(f'number of interval (each is {s_dicts["tti_interval"]})')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 2, columnspacing=0.5, labelspacing=0.1)
+def draw_one_workload_pnlast_growbucket(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    total_hit_len = s_dicts['total_hit_len']
+    record_bucket_number = s_dicts['record_bucket_number'] 
+    grow_hitlen_record = s_dicts['grow_hitlen_record']
+
+    r_record = np.flip(grow_hitlen_record)
+    r_c_record = r_record.cumsum()
+    r_crate_record = r_c_record / total_hit_len
+    ax.plot(r_crate_record, label='cum_growrate',color = contrasting_orange[0],  linewidth=2)
+
+    ax.set_ylabel('rate')
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
+    # ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
+    ax.set_xlabel(f'number of buckets (each is {all_set // record_bucket_number}grow set)')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 2, columnspacing=0.5, labelspacing=0.1)
 
 
 
@@ -83,6 +206,7 @@ class SetPositiveState:
         self.positive_bits = np.full(full_ass, False)
         self.positive_cyclelen_record = {start_postive:0}
         self.positive_total_blocklen = {start_postive:0}
+        self.positive_total_hitlen = {start_postive:0}
         self.positive_num = start_postive
         for i in range(start_postive):
             self.positive_bits[i] = True
@@ -111,6 +235,10 @@ class SetPositiveState:
                     need_grow_ways -= 1
             self.positive_cyclelen_record[self.positive_num] = delta_stamp
             self.positive_total_blocklen[self.positive_num] = total_blocklen
+            self.positive_total_hitlen[self.positive_num] = total_hitlen
+            return True
+        else:
+            return False
 
 
     def newBlock(self, way_id, meta_datas):
@@ -159,54 +287,105 @@ def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
         s_dicts['l3_total_demand'] = one_dict['l3.demandHits'][0] + one_dict['l3.demandMisses'][0]
 
         db_path = os.path.join(new_base,'hm.db')
-        all_access_query = 'SELECT SETIDX,WAYIDX,ISINS,METAS,STAMP FROM HitPosTrace;'
         con = sqlite3.connect(db_path)
         cur = con.cursor()
+        stamp0_query = 'SELECT min(STAMP),max(STAMP)-min(STAMP) from HitMissTrace;'
+        f = cur.execute(stamp0_query)
+        stamp0,delta_stamp_last = f.fetchone()
+
+        tti_hitblock_l = []
+        tti_len = 5_000_000
+
+        all_hitmiss_query = 'SELECT ISMISS,STAMP FROM HitMissTrace ORDER BY ID;'
+        f = cur.execute(all_hitmiss_query)
+        def insertIntoTTI(t,ishit,isgrow):
+            # total access, ishit, isgrow
+            if t >= len(tti_hitblock_l):
+                for _ in range( t - len(tti_hitblock_l) + 1 ):
+                    tti_hitblock_l.append([0,0,0])
+            if isgrow:
+                #grow
+                tti_hitblock_l[t][2] += 1
+            elif ishit:
+                #hit access cnt and add hitcnt
+                tti_hitblock_l[t][0] += 1
+                tti_hitblock_l[t][1] += 1
+            else:
+                #miss, add access cnt
+                tti_hitblock_l[t][0] += 1
+        
+        for ismiss,stamp in f:
+            ismiss = bool(int(ismiss))
+            stamp = int(stamp)
+            delta_stamp = stamp - stamp0
+            tti = delta_stamp // tti_len
+            insertIntoTTI(tti,not ismiss,False)
+
+        all_access_query = 'SELECT SETIDX,WAYIDX,ISINS,METAS,STAMP FROM HitPosTrace ORDER BY ID;'
         f = cur.execute(all_access_query)
 
-        pn_start_positive = math.ceil(full_ass/2)
+        # pn_start_positive = math.ceil(full_ass/2)
+        pn_start_positive = full_ass -1
         pn_states = [SetPositiveState(i,full_ass,
             start_postive=pn_start_positive,
             decrease_f=1,
             ) for i in range(all_set)]
-        stamp0 = 0
         total_hit_len = 0
-        totla_block_len = 0
+        total_block_len = 0
+        
+        total_grow_cnt = 0
+        record_bucket_number = 32
+        one_grow_bucket = all_set//record_bucket_number
+        grow_hitlen_record = np.zeros(record_bucket_number)
         for setidx,wayidx,isins,metas,stamp in f:
             setidx = int(setidx)
             wayidx = int(wayidx)
             isins = bool(int(isins))
             metas = int(metas)
             stamp = int(stamp)
-            if stamp0 == 0:
-                stamp0 = stamp
             delta_stamp = stamp - stamp0
-            totla_block_len += 1
+            tti = delta_stamp // tti_len
+            total_block_len += 1
             if isins:
                 #insert block
                 pn_states[setidx].newBlock(wayidx,metas)
             else:
                 #hit block
                 total_hit_len += 1
-                pn_states[setidx].newHit(wayidx,delta_stamp,
-                                totla_block_len,total_hit_len)
+                grow_happend = pn_states[setidx].newHit(wayidx,delta_stamp,
+                                total_block_len,total_hit_len)
+                insertIntoTTI(tti,True,grow_happend)
+                if grow_happend:
+                    bucket_idx = total_grow_cnt // one_grow_bucket
+                    total_grow_cnt += 1
+                    grow_hitlen_record[bucket_idx] += 1
 
         cur.close()
     s_dicts['est_used_ways'] = [0 for _ in range(all_set)]
     s_dicts['last_one_need_cycle'] = [0 for _ in range(all_set)]
     s_dicts['last_one_need_block'] = [0 for _ in range(all_set)]
+    s_dicts['last_one_need_hit'] = [0 for _ in range(all_set)]
+    s_dicts['tti_record'] = tti_hitblock_l
+    s_dicts['tti_interval'] = f'{tti_len//1_000_000}M'
+    
+    s_dicts['total_hit_len'] = total_hit_len
+    s_dicts['record_bucket_number'] = record_bucket_number
+    s_dicts['grow_hitlen_record'] = grow_hitlen_record
 
     for idx in range(all_set):
         set_pn_state = pn_states[idx]
         s_dicts['est_used_ways'][idx] = max(set_pn_state.positive_num,1)
         pcycle_dict = set_pn_state.positive_cyclelen_record
         pb_dict = set_pn_state.positive_total_blocklen
+        ph_dict = set_pn_state.positive_total_hitlen
         if set_pn_state.positive_num == pn_start_positive:
             s_dicts['last_one_need_cycle'][idx] = s_dicts['cpu_num_cycles']
             s_dicts['last_one_need_block'][idx] = s_dicts['l3_total_demand']
+            # s_dicts['last_one_need_hit'][idx] = s_dicts['l3_total_demand']
         else:
             s_dicts['last_one_need_cycle'][idx] = pcycle_dict[set_pn_state.positive_num]
             s_dicts['last_one_need_block'][idx] = pb_dict[set_pn_state.positive_num]
+            s_dicts['last_one_need_hit'][idx] = ph_dict[set_pn_state.positive_num]
 
     work_stats_dict[work] = s_dicts
 
@@ -268,6 +447,10 @@ if __name__ == '__main__':
     draw_picformat = [
         (draw_one_workload_pnlast_cyclelen_hist,'pn_last_cyclelen_hist_{}.png',None),
         (draw_one_workload_pnlast_blocklen_hist,'pn_last_blocklen_hist_{}.png',None),
+        (draw_one_workload_pnlast_hitlen_hist,'pn_last_hitlen_hist_{}.png',None),
+        (draw_one_workload_pnlast_tti_change,'pn_last_tti_change_{}.png',None),
+        (draw_one_workload_pnlast_tti_growthchange,'pn_last_tti_growchange_{}.png',None),
+        (draw_one_workload_pnlast_growbucket,'pn_last_growbucket_{}.png',None),
     ]
 
     for perf_prefix in perf_prefixs:

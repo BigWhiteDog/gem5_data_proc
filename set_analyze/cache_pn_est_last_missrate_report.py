@@ -20,8 +20,6 @@ from matplotlib import ticker
 from matplotlib.patches import Patch
 import sqlite3
 
-import itertools
-
 
 parser = argparse.ArgumentParser(description="options to get set stats")
 # parser.add_argument('-d','--stats_dir', type=str,
@@ -39,95 +37,31 @@ all_set = 16384
 # full_ass = 8
 tail_set = int(0.001*all_set)
 
-def draw_reref_cycle_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    all_s_it = itertools.chain.from_iterable(s_dicts['valid_reref_delta_stamp'])
-    ax.hist(list(all_s_it), bins = 'auto', label='cycle len',histtype = 'bar', 
-            density=True, color = contrasting_orange[0],  linewidth=2)
-
-    ax.set_ylabel('portion of reref')
-    # ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
-    # ax.set_ylim(0,0.1)
-    ax.set_xlim(0,25_000_000)
-    ax.set_xlabel('delta cycles')
+def draw_growlist(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    # s_dicts['set_grow_lists'] = [lru_states[s].way_grow_list for s in range(all_set)]
+    # s_dicts['min_ways_no_extra_miss'] = [full_ass for _ in range(all_set)]
+    # set_grow_lists = s_dicts['set_grow_lists']
     ax.set_title(f'{workload_name}')
     if pos == (0,0):
         ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
             borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
-def draw_reref_cycle_hist_cdf(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    all_s_it = itertools.chain.from_iterable(s_dicts['valid_reref_delta_stamp'])
-    ax.hist(list(all_s_it), bins = 'auto', label='cycle len',histtype = 'bar', 
-            density=True, cumulative=True,color = contrasting_orange[0],  linewidth=2)
+        # ax.legend(shadow=0, fontsize = 12, bbox_to_anchor=(-0.01,1.3,0,0), loc = 'upper left',  \
+        #     borderaxespad=0.2, ncol = 10, columnspacing=0.5, labelspacing=0.1)
 
-    ax.set_ylabel('portion of reref')
-    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
-    ax.set_xlim(0,25_000_000)
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
-    # ax.set_ylim(0,0.1)
-    ax.set_xlabel('delta cycles')
-    ax.set_title(f'{workload_name}')
-    if pos == (0,0):
-        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
-            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
+def report_csvsum_pn_lost(usepd,s_dicts,workload_name,full_ass):
+    new_dict = {}
 
-def draw_reref_access_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    all_s_it = itertools.chain.from_iterable(s_dicts['valid_reref_delta_access'])
-    ax.hist(list(all_s_it), bins = 'auto', label='cycle len',histtype = 'bar', 
-            density=True, color = contrasting_orange[1],  linewidth=2)
+    new_dict['workload_name'] = workload_name
+    # new_dict['max_ways'] = full_ass
+    new_dict.update(s_dicts)
+    new_dict['average_delta_hit'] = (s_dicts['hits'] - s_dicts['oneless_hits'] + 
+        s_dicts['oneless_misses'] - s_dicts['misses'] )/2
+    new_dict['delta_slowdown'] = 1 - (s_dicts['oneless_ipc'] / s_dicts['ipc'])
+    new_dict['grow_loss_hitrate'] = s_dicts['grow_cnt'] / s_dicts['hitlast_cnt']
+    tmp_pd = pd.DataFrame(new_dict,index=[0])
+    return pd.concat([usepd,tmp_pd],ignore_index=True)
 
-    ax.set_ylabel('portion of reref')
-    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
-    # ax.set_ylim(0,0.1)
-    ax.set_xlabel('delta access')
-    ax.set_title(f'{workload_name}')
-    if pos == (0,0):
-        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
-            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
-def draw_reref_access_hist_cdf(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    all_s_it = itertools.chain.from_iterable(s_dicts['valid_reref_delta_access'])
-    ax.hist(list(all_s_it), bins = 'auto', label='cycle len',histtype = 'bar', 
-            density=True, cumulative=True, color = contrasting_orange[1],  linewidth=2)
-
-    ax.set_ylabel('portion of reref')
-    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
-    # ax.set_ylim(0,0.1)
-    ax.set_xlabel('delta access')
-    ax.set_title(f'{workload_name}')
-    if pos == (0,0):
-        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
-            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
-
-class SetValidRerefStates:
-    #record reref distance only when the last time is hit
-    def __init__(self, set_id, full_ass):
-        self.set_id = set_id
-        self.full_ass = full_ass
-        #stamp,cnt,ismiss
-        self.ongoing_tags = {}
-        self.access_cnts = 0
-
-        self.valid_reref_deltastamp = []
-        self.valid_reref_deltaaccess = []
-
-    def newcome(self, tag, stamp, ismiss):
-        self.access_cnts += 1
-        if ismiss:
-            #miss, just update tag status
-            self.ongoing_tags[tag] = [stamp, self.access_cnts, ismiss]
-        else:
-            #hit, check if tag is ongoing
-            if tag in self.ongoing_tags:
-                #ongoing tag, record reref distance
-                last_stamp, last_access, last_ismiss = self.ongoing_tags[tag]
-                self.valid_reref_deltastamp.append(stamp - last_stamp)
-                self.valid_reref_deltaaccess.append(self.access_cnts - last_access)
-            #update ongoing tag
-            self.ongoing_tags[tag] = [stamp, self.access_cnts, ismiss]
-
-
-def analyze_workload_len_est(work_stats_dict,work,work_dir,full_ass):
+def analyze_pn_lencycle_est(work_stats_dict,work,work_dir,full_ass):
     if work in work_stats_dict:
         return
     s_2 = re.compile(r'(\w+)-([\w\.]+)')
@@ -147,28 +81,55 @@ def analyze_workload_len_est(work_stats_dict,work,work_dir,full_ass):
             continue
 
         new_base = os.path.join(work_dir,part)
+        with open(os.path.join(new_base,f'1period.json'),'r') as f:
+            one_dict = json.load(f)
+        
+        another_part = os.path.join(work_dir,f'l3-{ways-1}')
+        with open(os.path.join(another_part,f'1period.json'),'r') as f:
+            another_dict = json.load(f)
+        
+        s_dicts['ipc'] = one_dict['cpu.ipc'][0]
+        s_dicts['hits'] = one_dict['l3.demandHits'][0]
+        s_dicts['misses'] = one_dict['l3.demandMisses'][0]
+
+        s_dicts['oneless_ipc'] = another_dict['cpu.ipc'][0]
+        s_dicts['oneless_hits'] = another_dict['l3.demandHits'][0]
+        s_dicts['oneless_misses'] = another_dict['l3.demandMisses'][0]
+      
         db_path = os.path.join(new_base,'hm.db')
-        all_access_query = 'SELECT SETIDX,TAG,STAMP,ISMISS FROM HitMissTrace ORDER BY ID;'
         con = sqlite3.connect(db_path)
         cur = con.cursor()
+
+        all_access_query = 'SELECT SETIDX,WAYIDX,ISINS,METAS,STAMP FROM HitPosTrace ORDER BY ID;'
         f = cur.execute(all_access_query)
 
-        reref_states = [SetValidRerefStates(se,full_ass) for se in range(all_set)]
-        stamp0 = 0
-        for idx,tag,stamp,ismiss in f:
-            idx = int(idx)
-            tag = int(tag)
+        pn_start_positive = full_ass -1
+        pn_est_bits = np.full(all_set,False)
+        find_sets = set()
+        hitlast_cnt = 0
+        for setidx,wayidx,isins,metas,stamp in f:
+            setidx = int(setidx)
+            wayidx = int(wayidx)
+            isins = bool(int(isins))
             stamp = int(stamp)
-            ismiss = bool(int(ismiss))
-            if stamp0 == 0:
-                stamp0 = stamp
-            delta_stamp = stamp - stamp0
-            reref_states[idx].newcome(tag,delta_stamp,ismiss)
+            if isins:
+                pass
+            else:
+                #hit block
+                if wayidx >= pn_start_positive:
+                    if setidx not in find_sets:
+                    # if True:
+                        find_sets.add(setidx)
+                    hitlast_cnt += 1
+                    pn_est_bits[setidx] = True
+
+        s_dicts['hitlast_cnt'] = hitlast_cnt
+        s_dicts['grow_cnt'] = len(find_sets)
 
         cur.close()
-    s_dicts['last_delta_stamp'] = delta_stamp
-    s_dicts['valid_reref_delta_stamp'] = [r.valid_reref_deltastamp for r in reref_states]
-    s_dicts['valid_reref_delta_access'] = [r.valid_reref_deltaaccess for r in reref_states]
+
+    # stride_tmp = pn_est_bits.reshape(stride_size,factor)
+    # stride_est_bits = np.any(stride_tmp,axis=1)
 
     work_stats_dict[work] = s_dicts
 
@@ -259,12 +220,10 @@ if __name__ == '__main__':
     n_rows = math.ceil(n_works/4)
 
     waydict_format = 'cache_work_{}ways'
-    perf_prefixs = ['90perf','95perf','full']
+    # perf_prefixs = ['90perf','95perf','full']
+    perf_prefixs = ['95perf']
     drawF_picf_jsonf_csvF_csvsumf = [
-        (draw_reref_cycle_hist,'valid_reref_cycle_hist_{}.png','valid_reref_{}.json',None,None),
-        (draw_reref_cycle_hist_cdf,'valid_reref_cycle_hist_cdf_{}.png','valid_reref_{}.json',None,None),
-        (draw_reref_access_hist,'valid_reref_access_hist_{}.png','valid_reref_{}.json',None,None),
-        (draw_reref_access_hist_cdf,'valid_reref_access_hist_cdf_{}.png','valid_reref_{}.json',None,None),
+        (draw_growlist,'atd-nothing{}.png','pn_oneless_est_lost_{}.json',report_csvsum_pn_lost,'pn_est_lost_{}.csv'),
         # (draw_one_workload_pn_blocklen,'pn_est_blocklen_contour_{}.png'),
         # (draw_one_workload_pn_cyclelen,'pn_est_cyclelen_contour_{}.png'),
     ]
@@ -283,7 +242,7 @@ if __name__ == '__main__':
             else:
                 this_csv_summary_path = os.path.join(csv_summary_dir_path,csv_name_format.format(perf_prefix))
             draw_db_by_func(base_dir,n_rows,waydict,
-                analyze_func=analyze_workload_len_est,
+                analyze_func=analyze_pn_lencycle_est,
                 draw_one_func=draw_func,
                 csv_one_func=csv_func,
                 fig_name=os.path.join(pic_dir_path,pic_name_format.format(perf_prefix)),

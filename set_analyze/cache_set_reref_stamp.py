@@ -21,7 +21,8 @@ from matplotlib.patches import Patch
 import sqlite3
 
 import itertools
-
+import functools
+import operator
 
 parser = argparse.ArgumentParser(description="options to get set stats")
 # parser.add_argument('-d','--stats_dir', type=str,
@@ -39,95 +40,112 @@ all_set = 16384
 # full_ass = 8
 tail_set = int(0.001*all_set)
 
-def draw_reref_cycle_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    all_s_it = itertools.chain.from_iterable(s_dicts['valid_reref_delta_stamp'])
-    ax.hist(list(all_s_it), bins = 'auto', label='cycle len',histtype = 'bar', 
-            density=True, color = contrasting_orange[0],  linewidth=2)
+def draw_lru_farhit_stampsdist(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    rt = s_dicts['farhit_reusetime_list']
+    rt_array = np.array(rt)
+    rtm_array = rt_array/1_000_000
+    max_time = s_dicts['delta_stamp_last']
+    maxM_time = max_time/1_000_000
 
-    ax.set_ylabel('portion of reref')
-    # ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
-    # ax.set_ylim(0,0.1)
-    ax.set_xlim(0,25_000_000)
-    ax.set_xlabel('delta cycles')
-    ax.set_title(f'{workload_name}')
-    if pos == (0,0):
-        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
-            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
-def draw_reref_cycle_hist_cdf(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    all_s_it = itertools.chain.from_iterable(s_dicts['valid_reref_delta_stamp'])
-    ax.hist(list(all_s_it), bins = 'auto', label='cycle len',histtype = 'bar', 
-            density=True, cumulative=True,color = contrasting_orange[0],  linewidth=2)
+    ax.hist(rtm_array.tolist(), bins = 'auto', label='farthest reref Mcycle',histtype = 'bar', 
+            color =  contrasting_orange[0],  linewidth=2)
 
-    ax.set_ylabel('portion of reref')
-    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
-    ax.set_xlim(0,25_000_000)
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
-    # ax.set_ylim(0,0.1)
-    ax.set_xlabel('delta cycles')
-    ax.set_title(f'{workload_name}')
-    if pos == (0,0):
-        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
-            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
+    # ax.set_xlim(0,maxM_time)
 
-def draw_reref_access_hist(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    all_s_it = itertools.chain.from_iterable(s_dicts['valid_reref_delta_access'])
-    ax.hist(list(all_s_it), bins = 'auto', label='cycle len',histtype = 'bar', 
-            density=True, color = contrasting_orange[1],  linewidth=2)
+    # hitlen_hist,hitlen_edges = np.histogram(rt, bins = 'auto')
+    # sum_density = np.sum(hitlen_hist)
+    # hitlen_hist = hitlen_hist/sum_density
+    # ax.hist(hit)
+    # ax.hist(hitlen_list, bins = 'auto', label='hit len',histtype = 'step', 
+    #         density=True, cumulative=True, color = hitlen_list_color,  linewidth=2)
 
-    ax.set_ylabel('portion of reref')
-    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
-    # ax.set_ylim(0,0.1)
-    ax.set_xlabel('delta access')
-    ax.set_title(f'{workload_name}')
-    if pos == (0,0):
-        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
-            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
-def draw_reref_access_hist_cdf(ax,s_dicts,workload_name,full_ass,pos:tuple):
-    all_s_it = itertools.chain.from_iterable(s_dicts['valid_reref_delta_access'])
-    ax.hist(list(all_s_it), bins = 'auto', label='cycle len',histtype = 'bar', 
-            density=True, cumulative=True, color = contrasting_orange[1],  linewidth=2)
 
-    ax.set_ylabel('portion of reref')
-    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1))
-    # ax.yaxis.set_major_locator(ticker.MultipleLocator(0.01))
-    # ax.set_ylim(0,0.1)
-    ax.set_xlabel('delta access')
+    ax.set_ylabel('farthest reuse counts')
+    ax.set_xlabel('reuse cycle (Mcycle)')
     ax.set_title(f'{workload_name}')
     if pos == (0,0):
         ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
             borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
 
-class SetValidRerefStates:
-    #record reref distance only when the last time is hit
-    def __init__(self, set_id, full_ass):
+def draw_lru_firstfarhit_stampsdist(ax,s_dicts,workload_name,full_ass,pos:tuple):
+    ffht = s_dicts['first_farhit_stamp_list']
+    ffht_array = np.array(ffht)
+    ffhtm_array = ffht_array/1_000_000
+    max_time = s_dicts['delta_stamp_last']
+    maxM_time = max_time/1_000_000
+
+    # ax.hist(ffhtm_array.tolist(), bins = 'auto', label='first far farhit happen',histtype = 'bar', 
+    #         density=True, cumulative=True,
+    #         color =  contrasting_orange[1],  linewidth=2)
+
+    ax.set_xlim(0,maxM_time)
+
+    hitlen_hist,hitlen_edges = np.histogram(ffhtm_array.tolist(), bins = 'auto')
+    # sum_density = np.sum(hitlen_hist)
+    hitlen_hist = hitlen_hist/all_set
+    cum_hitlen_hist = np.cumsum(hitlen_hist)
+    ax.stairs(cum_hitlen_hist, hitlen_edges, label='farthest reuse happened sets',
+        color =  contrasting_orange[1],  linewidth=2 , fill=True)
+    
+    ax.set_ylim(0,1)
+    ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, decimals=0))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(0.1))
+
+    ax.set_ylabel('portion of sets with farthest reuse')
+    ax.set_xlabel('timeline (Mcycle)')
+    ax.set_title(f'{workload_name}')
+    if pos == (0,0):
+        ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
+            borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
+
+
+
+class SetLRUStates:
+    def __init__(self, set_id:int, full_ass:int, target_ass:int):
         self.set_id = set_id
         self.full_ass = full_ass
-        #stamp,cnt,ismiss
-        self.ongoing_tags = {}
-        self.access_cnts = 0
+        #when hit pos >= target_ass, it is a tail hit
+        self.target_ass = target_ass
+        self.mru_list = list()
+        self.mru_last_stamps = list()
+        #record stats for far hit
+        self.farhit_delta_stamp_list = []
+        self.first_farhit_stamp = None
 
-        self.valid_reref_deltastamp = []
-        self.valid_reref_deltaaccess = []
+    def record_sign_hit(self, hit_pos,stamp):
+        lstamp = self.mru_last_stamps
+        if hit_pos >= self.target_ass:
+            #far hit
+            last_stamp = lstamp[hit_pos]
+            delta_stamp = stamp - last_stamp
+            self.farhit_delta_stamp_list.append(delta_stamp)
+            if self.first_farhit_stamp is None:
+                self.first_farhit_stamp = stamp
 
-    def newcome(self, tag, stamp, ismiss):
-        self.access_cnts += 1
-        if ismiss:
-            #miss, just update tag status
-            self.ongoing_tags[tag] = [stamp, self.access_cnts, ismiss]
+    def newcome(self, tag, stamp):
+        ls = self.mru_list
+        lstamp = self.mru_last_stamps
+        if tag in ls:
+            #hit
+            #record hit pos
+            hit_pos = ls.index(tag)
+            #record hit pos stamp
+            self.record_sign_hit(hit_pos,stamp)
+            #modify lru
+            ls.pop(hit_pos)
+            ls.insert(0,tag)
+            #modify lru stamp
+            lstamp.pop(hit_pos)
+            lstamp.insert(0,stamp)
         else:
-            #hit, check if tag is ongoing
-            if tag in self.ongoing_tags:
-                #ongoing tag, record reref distance
-                last_stamp, last_access, last_ismiss = self.ongoing_tags[tag]
-                self.valid_reref_deltastamp.append(stamp - last_stamp)
-                self.valid_reref_deltaaccess.append(self.access_cnts - last_access)
-            #update ongoing tag
-            self.ongoing_tags[tag] = [stamp, self.access_cnts, ismiss]
+            #miss
+            if len(ls) >= self.full_ass:
+                evict_tag = ls.pop()
+                evict_stamp = lstamp.pop()
+            ls.insert(0,tag)
+            lstamp.insert(0,stamp)
 
-
-def analyze_workload_len_est(work_stats_dict,work,work_dir,full_ass):
+def analyze_workload_reuse(work_stats_dict,work,work_dir,full_ass):
     if work in work_stats_dict:
         return
     s_2 = re.compile(r'(\w+)-([\w\.]+)')
@@ -148,27 +166,32 @@ def analyze_workload_len_est(work_stats_dict,work,work_dir,full_ass):
 
         new_base = os.path.join(work_dir,part)
         db_path = os.path.join(new_base,'hm.db')
-        all_access_query = 'SELECT SETIDX,TAG,STAMP,ISMISS FROM HitMissTrace ORDER BY ID;'
         con = sqlite3.connect(db_path)
         cur = con.cursor()
+        stamp0_query = 'SELECT min(STAMP),max(STAMP)-min(STAMP) from HitMissTrace;'
+        f = cur.execute(stamp0_query)
+        stamp0,delta_stamp_last = f.fetchone()
+
+        all_access_query = 'SELECT SETIDX,TAG,STAMP FROM HitMissTrace ORDER BY ID;'
         f = cur.execute(all_access_query)
 
-        reref_states = [SetValidRerefStates(se,full_ass) for se in range(all_set)]
-        stamp0 = 0
-        for idx,tag,stamp,ismiss in f:
+        lru_states = [SetLRUStates(se,full_ass,full_ass-1) for se in range(all_set)]
+        for idx,tag,stamp in f:
             idx = int(idx)
             tag = int(tag)
-            stamp = int(stamp)
-            ismiss = bool(int(ismiss))
-            if stamp0 == 0:
-                stamp0 = stamp
-            delta_stamp = stamp - stamp0
-            reref_states[idx].newcome(tag,delta_stamp,ismiss)
+            stamp = int(stamp) - stamp0
+            lru_states[idx].newcome(tag,stamp)
 
         cur.close()
-    s_dicts['last_delta_stamp'] = delta_stamp
-    s_dicts['valid_reref_delta_stamp'] = [r.valid_reref_deltastamp for r in reref_states]
-    s_dicts['valid_reref_delta_access'] = [r.valid_reref_deltaaccess for r in reref_states]
+
+    s_dicts['delta_stamp_last'] = delta_stamp_last
+
+    s_dicts['farhit_reusetime_list'] = []
+    s_dicts['first_farhit_stamp_list'] = []
+    for reref_state in lru_states:
+        s_dicts['farhit_reusetime_list'].extend(reref_state.farhit_delta_stamp_list)
+        if reref_state.first_farhit_stamp is not None:
+            s_dicts['first_farhit_stamp_list'].append(reref_state.first_farhit_stamp)
 
     work_stats_dict[work] = s_dicts
 
@@ -261,12 +284,10 @@ if __name__ == '__main__':
     waydict_format = 'cache_work_{}ways'
     perf_prefixs = ['90perf','95perf','full']
     drawF_picf_jsonf_csvF_csvsumf = [
-        (draw_reref_cycle_hist,'valid_reref_cycle_hist_{}.png','valid_reref_{}.json',None,None),
-        (draw_reref_cycle_hist_cdf,'valid_reref_cycle_hist_cdf_{}.png','valid_reref_{}.json',None,None),
-        (draw_reref_access_hist,'valid_reref_access_hist_{}.png','valid_reref_{}.json',None,None),
-        (draw_reref_access_hist_cdf,'valid_reref_access_hist_cdf_{}.png','valid_reref_{}.json',None,None),
-        # (draw_one_workload_pn_blocklen,'pn_est_blocklen_contour_{}.png'),
-        # (draw_one_workload_pn_cyclelen,'pn_est_cyclelen_contour_{}.png'),
+        # (draw_memsign_bar,'sign_mem_reref_bar_{}.png','sign_reref_{}.json',None,None),
+        # (draw_pcsign_bar,'sign_pc_reref_bar_{}.png','sign_reref_{}.json',None,None),
+        (draw_lru_farhit_stampsdist,'lru_farhit_stampsdist_{}.png','lrufarhit_reref_stamp_{}.json',None,None),
+        (draw_lru_firstfarhit_stampsdist,'lru_firstfarhit_stampsdist_{}.png','lrufarhit_reref_stamp_{}.json',None,None),
     ]
 
     for perf_prefix in perf_prefixs:
@@ -283,7 +304,7 @@ if __name__ == '__main__':
             else:
                 this_csv_summary_path = os.path.join(csv_summary_dir_path,csv_name_format.format(perf_prefix))
             draw_db_by_func(base_dir,n_rows,waydict,
-                analyze_func=analyze_workload_len_est,
+                analyze_func=analyze_workload_reuse,
                 draw_one_func=draw_func,
                 csv_one_func=csv_func,
                 fig_name=os.path.join(pic_dir_path,pic_name_format.format(perf_prefix)),
