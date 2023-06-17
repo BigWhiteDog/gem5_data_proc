@@ -30,9 +30,10 @@ parser.add_argument('-j','--json', type=str,
 opt = parser.parse_args()
 
 confs=[
-    "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_xs_tailbm50M.json",
+    # "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_xs_tailbm50M.json",
     "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_goldencove_tailbm50M.json",
     "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_oldinc_tailbm50M.json",
+    "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_skylake_tailbm50M.json",
 ]
 
 mycolor = ['#044E48','#06746B','#20876B','#6A9A48','#B5AC23','#E6B80B','#FACA3E','#FFDF80','#FFEBB0']
@@ -52,7 +53,8 @@ def draw_one_workload_ipc(ax,s_dicts,workload_names):
     ax.plot(sorted_keys,nipcs,marker='o',label='ipc')
 
     slowdown_2 = nipcs[-2]
-    if (slowdown_2<0.95 and nipcs[-1]<0.95):
+    min_slowdown = np.min(nipcs)
+    if (min_slowdown <=0.9):
         use_conf["cache_work_names"].append(workload_names)
         # print(f'{workload_names} get slowdown {slowdown_2:.3} 2way')
         fulfill85_way = len(nipcs)
