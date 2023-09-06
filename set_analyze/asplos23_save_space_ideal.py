@@ -41,7 +41,7 @@ confs=[
 
 from set_analyze.my_diff_color import *
 
-n_cols = 6
+n_cols = 7
 
 def draw_one_ideal_savespace(ax,s_dicts,workload_name,fulfil_ass,pos:tuple):
     min_ways = s_dicts['min_ways_no_extra_miss']
@@ -107,6 +107,7 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,analyze_func,draw_one_func
     work_stats_dict = input_stats_dict
 
     for i,work in enumerate(worksname_waydict):
+        work = worksname[i]
         full_ass = worksname_waydict[work]
         work_dir = os.path.join(base_dir,work)
         if not os.path.isdir(work_dir):
@@ -154,6 +155,7 @@ def run_one_conf(select_json:str):
     csv_dir_path = f'set_analyze/{test_prefix}other/csv'
     pic_dir_path = f'set_analyze/{test_prefix}pics'
     os.makedirs(pic_dir_path, exist_ok=True)
+    global worksname
     worksname = use_conf['cache_work_names'] #like mcf
 
     n_works = len(worksname)

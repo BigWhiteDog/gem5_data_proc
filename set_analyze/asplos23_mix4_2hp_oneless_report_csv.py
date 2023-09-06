@@ -89,8 +89,8 @@ def analyze_one_workload_dict(base_dir,workload_names,ncore=2):
     #     # pd_dict[f'static_cpu{c}.ipc'] = static_cpuipc
     #     csv_cpuipc = s_dicts['csv'][f'cpu{c}.ipc'][0]
     #     pd_dict[f'csv_speedup_cpu{c}'] = csv_cpuipc/static_cpuipc
-    for c in range(ncore):
-        pd_dict[f'nopart_speedup_cpu{c}'] = s_dicts['nopart'][f'cpu{c}.ipc'][0]/static_cpuipcs[c]
+    # for c in range(ncore):
+    #     pd_dict[f'nopart_speedup_cpu{c}'] = s_dicts['nopart'][f'cpu{c}.ipc'][0]/static_cpuipcs[c]
     get_policy_re = re.compile(r'(.*)Policy(.*)')
     get_train_re = re.compile(r'(\d+)MTrain')
     get_test_re = re.compile(r'(\d+)MTest')
@@ -165,7 +165,7 @@ def run_one_conf(select_json:str):
     for w in work0names:
         full_grow_dict[w] = {}
 
-    base_dir = f'/nfs/home/zhangchuanqi/lvna/for_xs/catlog/mix{ncore}-qosfromstart-core0-{test_prefix}{perf_prefix}'
+    base_dir = f'/nfs/home/zhangchuanqi/lvna/for_xs/catlog/mix{ncore}-2hp-{test_prefix}{perf_prefix}'
     worksname = os.listdir(base_dir) #like omnetpp-xalancbmk
     pd_dict_list = []
     for i,work in enumerate(worksname):
@@ -181,10 +181,10 @@ def run_one_conf(select_json:str):
         pd_dict_list.append(pd_dict)
 
     # Create a Pandas Excel writer using XlsxWriter as the engine.
-    twriter = pd.ExcelWriter(f'set_analyze/asplos23-mix{ncore}-{test_prefix}allpolicy.xlsx', engine='xlsxwriter')
+    twriter = pd.ExcelWriter(f'set_analyze/asplos23-mix{ncore}-2hp-{test_prefix}allpolicy.xlsx', engine='xlsxwriter')
 
     dflist = []
-    tstep_list = [1,2,4,8]
+    tstep_list = [2]
     for tstep in tstep_list:
         new_pd_list = copy.deepcopy(pd_dict_list)
         target_perf_list = [0.97,0.975,0.98,0.985,0.99]
@@ -198,27 +198,23 @@ def run_one_conf(select_json:str):
                 target_max_s1 = {}
                 for t in range(tstep,64,tstep):
                     satisfy = True
-                    s1_max = 0
-                    s1_max_t = 0
-                    s1_all = []
+                    s_be_max = 0
                     for w1 in res_dicts:
-                        s0= res_dicts[w1][t][0]
-                        other_speeds = [res_dicts[w1][t][i] for i in range(1,ncore)]
-                        s1= np.average(other_speeds)
+                        s0 = res_dicts[w1][t][0]
+                        s1 = res_dicts[w1][t][1]
+                        other_speeds = [res_dicts[w1][t][i] for i in range(2,ncore)]
+                        s_be= np.average(other_speeds)
                         # s1= np.max(other_speeds)
-                        s1_all.append(s1)
-                        if s0 < perf:
+                        if s0 < perf or s1 < perf:
                             satisfy = False
                             break
-                        if s1 > s1_max:
-                            s1_max = s1
-                            s1_max_t = t
+                        if s_be > s_be_max:
+                            s_be_max = s_be
                     if satisfy:
                         #t is the min satisfy grow target
                         # find_grow_target[w0] = t
                         # break
-                        # target_max_s1[t] = s1_max
-                        target_max_s1[t] = np.average(s1_all)
+                        target_max_s1[t] = s_be_max
                 if len(target_max_s1) == 0:
                     target_max_s1[64] = 1
                 final_t = max(target_max_s1, key=lambda k:target_max_s1[k])
@@ -229,10 +225,11 @@ def run_one_conf(select_json:str):
             grow_df = pd.DataFrame(find_grow_target,index=[0])
             grow_df.to_excel(twriter, sheet_name=f'{maxbuckets}_target_{perf}_in64')
             
-            bucket_target_key = f'{maxbuckets}_target_{perf}_in64'
-            use_conf[bucket_target_key] = {}
-            for w0 in work0names:
-                use_conf[bucket_target_key][w0] = find_grow_target[w0]
+            #setting json conf bucket target for every workload
+            # bucket_target_key = f'{maxbuckets}_target_{perf}_in64'
+            # use_conf[bucket_target_key] = {}
+            # for w0 in work0names:
+            #     use_conf[bucket_target_key][w0] = find_grow_target[w0]
 
             
             for p in new_pd_list:
@@ -246,7 +243,7 @@ def run_one_conf(select_json:str):
         mycolumns = ['workload','core0_setway']
 
         df = pd.DataFrame(new_pd_list)
-        df.to_csv(f'set_analyze/asplos23-mix{ncore}-{test_prefix}oneless_report{maxbuckets}.csv',index=False,float_format="%.5f")
+        df.to_csv(f'set_analyze/asplos23-mix{ncore}-2hp-{test_prefix}oneless_report{maxbuckets}.csv',index=False,float_format="%.5f")
         df.to_excel(twriter, sheet_name=f'{maxbuckets}bucket')
 
     twriter.close()

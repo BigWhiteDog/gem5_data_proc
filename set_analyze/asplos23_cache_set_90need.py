@@ -32,8 +32,10 @@ opt = parser.parse_args()
 confs=[
     # "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_xs_tailbm50M.json",
     "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_goldencove_tailbm50M.json",
-    "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_oldinc_tailbm50M.json",
-    "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_skylake_tailbm50M.json",
+    # "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_goldencove24M_tailbm50M.json",
+    # "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_goldencove48M_tailbm50M.json",
+    # "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_oldinc_tailbm50M.json",
+    # "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_skylake_tailbm50M.json",
 ]
 
 # from cache_sensitive_names import *
@@ -49,16 +51,18 @@ def draw_one_workload_way_need(ax,s_dicts,workload_name,full_ass,pos:tuple):
     x_val = np.arange(all_set)
     full_ass_vals = np.full(all_set,full_ass)
 
-    extra0_list_color = contrasting_orange[5]
+    extra0_list_color = contrasting_orange[15]
     alpha_set = 1.0
-    ax.plot(s_extra0_list, label='ways with same hit cnts', color = extra0_list_color,linewidth=2)
+    ax.plot(s_extra0_list, label='wasted cache space', color = extra0_list_color,linewidth=2)
     ax.fill_between(x_val, full_ass_vals, s_extra0_list, color = extra0_list_color, alpha=alpha_set)
-    ax.plot(full_ass_vals,label='95% perf CAT set ways', color = contrasting_orange[4],linewidth=4)
-    ax.set_ylabel('needed ways')
-    ax.set_ylim(0, max_assoc+.1)
+    ax.plot(full_ass_vals,label='95% perf CAT set ways', color = contrasting_orange[4],linewidth=5)
+    if pos[1] == 0:
+        ax.set_ylabel('Needed ways')
+    ax.set_ylim(0, max_assoc)
     ax.set_xlim(0,all_set)
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
-    ax.set_xlabel('sorted set index')
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(2))
+    if pos[0] == 1:
+        ax.set_xlabel('Sorted set index')
     ax.set_title(f'{workload_name}')
     # if pos == (0,0):
     #     ax.legend(shadow=0, bbox_to_anchor=(-0.01,1.6), loc = 'upper left',  \
@@ -68,7 +72,7 @@ def draw_one_workload_way_need(ax,s_dicts,workload_name,full_ass,pos:tuple):
 
 
 def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,n_cols=6,
-                    force_update_json = True):
+                    force_update_json = False):
 
     work_stats_dict = {}
     json_format = '/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/{}other/json/asplos23_cache_set_95need.json'
@@ -91,11 +95,11 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,n_c
 
     n_rows = math.ceil(len(worksname_waydict) / n_cols)
 
-    parameters = {'axes.labelsize': 25,
+    parameters = {'axes.labelsize': 30,
           'axes.titlesize': 30,
-          'xtick.labelsize': 20,
-          'ytick.labelsize': 20,
-          'legend.fontsize': 18,
+          'xtick.labelsize': 24,
+          'ytick.labelsize': 24,
+          'legend.fontsize': 30,
           'font.size': 20,
           'axes.facecolor': 'white',
           'figure.facecolor': 'white',
@@ -105,13 +109,14 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,n_c
 
 
 
-    fig,ax = plt.subplots(n_rows,n_cols)
+    fig,ax = plt.subplots(n_rows,n_cols, sharex=True, sharey=True)
     
     fig.set_size_inches(n_cols*6, 5*n_rows)
 
     s_2 = re.compile(r'(\w+)-([\w\.]+)')
 
     for i,work in enumerate(worksname_waydict):
+        work = worksname[i]
         full_ass = worksname_waydict[work]
         word_dir = os.path.join(base_dir,work)
         if not os.path.isdir(word_dir):
@@ -183,12 +188,12 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,n_c
             with open(json_path,'w') as f:
                 json.dump(work_stats_dict,f,indent=2)
     
-    legends = [Patch(color=contrasting_orange[4],label=f'95% perf CAT set ways'),
-                Patch(color=contrasting_orange[5],label=f'ways with same hit cnts'),
+    legends = [Patch(color=contrasting_orange[4],label=f'95% perf CAT ways'),
+                Patch(color=contrasting_orange[15],label=f'Wasted cache space'),
                 ]
     fig.legend(handles = legends, loc = 'upper left', ncol = 2 )
 
-    plt.tight_layout(rect=(0, 0, 1, 0.97))
+    plt.tight_layout(rect=(0, 0, 1, 0.93))
     plt.savefig(fig_name,dpi=300)
     plt.clf()
 
@@ -205,6 +210,7 @@ def run_one_conf(select_json:str):
     base_dir = base_dir_format.format(test_prefix)
     pic_dir_path = f'set_analyze/{test_prefix}pics'
     os.makedirs(pic_dir_path, exist_ok=True)
+    global worksname
     worksname = use_conf['cache_work_names'] #like mcf
     cache_work_90perfways = use_conf['cache_work_90perfways']
     cache_work_95perfways = use_conf['cache_work_95perfways']
@@ -215,8 +221,13 @@ def run_one_conf(select_json:str):
     global max_assoc
     max_assoc = use_conf['max_assoc']
 
+    print(worksname)
+    worksname.remove('lbm')
+    cache_work_95perf_maxfull_ways.pop('lbm')
+
     n_works = len(worksname)
-    n_rows = math.ceil(n_works/6)
+    n_cols = 6
+    n_rows = math.ceil(n_works/n_cols)
     # draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
     #     draw_one_func=draw_one_workload_way_need,fig_name= os.path.join(pic_dir_path,'way_need_90perf_dis.png'))
     # draw_db_by_func(base_dir,n_rows,cache_work_95perfways,
@@ -224,6 +235,7 @@ def run_one_conf(select_json:str):
     # draw_db_by_func(base_dir,n_rows,cache_work_fullways,
     #     draw_one_func=draw_one_workload_way_need,fig_name=os.path.join(pic_dir_path,'way_need_dis.png'))
     draw_db_by_func(base_dir,n_rows,cache_work_95perf_maxfull_ways,
+                    n_cols=n_cols,
         draw_one_func=draw_one_workload_way_need,fig_name=os.path.join(pic_dir_path,'asplos23_way_need_95perfmax8_dis.png'))
 
 
