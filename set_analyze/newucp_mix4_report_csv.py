@@ -32,12 +32,13 @@ parser.add_argument('-j','--json', type=str,
     default=None)
 parser.add_argument('--bench-choice',
 		    choices=['short','long'],
-			default='short')
+			default='long')
 
 opt = parser.parse_args()
 
 confs=[
-    "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_oldincLRU_tailbm250M.json",
+    # "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_oldincLRU_tailbm250M.json",
+    "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_oldincLRU16M_tailbm250M.json",
     # "/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/conf-json/conf_goldencoveLRU_tailbm250M.json",
 ]
 
@@ -58,12 +59,17 @@ def analyze_one_workload_dict(base_dir,workload_names,ncore=2):
         # if re.search(r'OneLessPageUCPPolicy', dkey):
         #     shutil.rmtree(new_base)
         #     continue
+        # force_update = True
+        force_update = False
         rmflag = False
+        jump_flag = False
         if re.search(r'LocalUCPPolicy-[2,5]M', dkey):
             rmflag = True
         elif re.search(r'BaseUCPPolicy-2M', dkey):
             rmflag = True
         elif re.search(r'LessUCPPolicy-2M', dkey):
+            rmflag = True
+        elif re.search(r'OneLessDynGHGroupUCPPolicy', dkey):
             rmflag = True
         elif re.search(r'PageUCPPolicy', dkey):
             # banlist = [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
@@ -72,13 +78,19 @@ def analyze_one_workload_dict(base_dir,workload_names,ncore=2):
             # banlist = [16, 32, 128, 512, 2048]
             if any([ f'{w}' in dkey for w in banlist ]):
                 continue
+        elif re.search(r'IpcSample',dkey):
+            pass
+            force_update = True
+            # jump_flag = True
+            # rmflag = True
             
         if rmflag:
             shutil.rmtree(new_base)
             continue
+        if jump_flag:
+            continue
 
         last_nsamples=1
-        force_update = True
 
         if force_update:
             one_dict = extract_newgem_raw_json(new_base,ncores=ncore,last_nsamples=last_nsamples)
@@ -100,7 +112,11 @@ def analyze_one_workload_dict(base_dir,workload_names,ncore=2):
     #     pd_dict[f'workload{i}'] = wn
 
     baseline_cpuipcs = [ s_dicts['nopart'][f'cpu{c}.ipc'][0] for c in range(ncore) ]
-    ucp_baseline_cpuipcs = [ s_dicts['BaseUCPPolicy-10M'][f'cpu{c}.ipc'][0] for c in range(ncore) ]
+    # ucp_baseline_cpuipcs = [ s_dicts['BaseUCPPolicy-10M'][f'cpu{c}.ipc'][0] for c in range(ncore) ]
+    ucp_baseline_cpuipcs = [ s_dicts['DSS32UCPPolicy-10M'][f'cpu{c}.ipc'][0] for c in range(ncore) ]
+    baseline_demandhits = [ s_dicts['nopart'][f'l3.demandHits::cpu{c}'][0] for c in range(ncore) ]
+    # ucp_baseline_demandhits = [ s_dicts['BaseUCPPolicy-10M'][f'l3.demandHits::cpu{c}'][0] for c in range(ncore) ]
+    ucp_baseline_demandhits = [ s_dicts['DSS32UCPPolicy-10M'][f'l3.demandHits::cpu{c}'][0] for c in range(ncore) ]
     # s_dicts.pop('nopart')
     # get_policy_re = re.compile(r'(.*)Policy(.*)')
     # get_train_re = re.compile(r'(\d+)MTrain')
@@ -113,6 +129,8 @@ def analyze_one_workload_dict(base_dir,workload_names,ncore=2):
         ipc_sum = 0
         speedup_sum = 0
         ucp_base_speedup_sum = 0
+        relhit_sum = 0
+        ucp_base_relhit_sum = 0
         for c in range(ncore):
             # pd_dict[f'{new_key}_ipc{c}'] = s_dicts[k][f'cpu{c}.ipc'][0]
             newipc = s_dicts[k][f'cpu{c}.ipc'][0]
@@ -120,13 +138,29 @@ def analyze_one_workload_dict(base_dir,workload_names,ncore=2):
             ipc_sum += newipc
             speedup_sum += newipc/baseline_cpuipcs[c]
 
+            if baseline_demandhits[c] == 0:
+                newrelhit = 1
+            else:
+                newrelhit = s_dicts[k][f'l3.demandHits::cpu{c}'][0]/baseline_demandhits[c]
+            pd_dict[f'{k}_relhit{c}'] = newrelhit
+            relhit_sum += newrelhit
+
             pd_dict[f'{k}_relperf{c}_ucp'] = newipc/ucp_baseline_cpuipcs[c]
             ucp_base_speedup_sum += newipc/ucp_baseline_cpuipcs[c]
+
+            if ucp_baseline_demandhits[c] == 0:
+                newrelhit = 1
+            else:
+                newrelhit = s_dicts[k][f'l3.demandHits::cpu{c}'][0]/ucp_baseline_demandhits[c]
+            pd_dict[f'{k}_relhit{c}_ucp'] = newrelhit
+            ucp_base_relhit_sum += newrelhit
 
 
         pd_dict[f'{k}_ipcsum'] = ipc_sum
         pd_dict[f'{k}_speedupsum'] = speedup_sum/ncore - 1
         pd_dict[f'{k}_speedupsum_ucp'] = ucp_base_speedup_sum/ncore - 1
+        pd_dict[f'{k}_relhitsum'] = relhit_sum/ncore - 1
+        pd_dict[f'{k}_relhitsum_ucp'] = ucp_base_relhit_sum/ncore - 1
 
     return pd_dict
 
@@ -158,6 +192,8 @@ def run_one_conf(select_json:str):
     ipc_sum_list = []
     speedup_sum_list = []
     speedup_sum_ucp_list = []
+    relhit_sum_list = []
+    relhit_sum_ucp_list = []
     for i,work in enumerate(worksname):
         word_dir = os.path.join(base_dir,work)
         if not os.path.isdir(word_dir):
@@ -190,11 +226,11 @@ def run_one_conf(select_json:str):
         # intervals = ['2M','5M','10M']
         intervals = ['10M']
         #find best page out of pages_xM
-        for inter in intervals:
-            page_keys = [ k for k in speedupsum_dict.keys() if k.startswith('PageUCPPolicy') and k.endswith(inter) ]
-            max_key = max(page_keys,key=lambda x: speedupsum_dict[x])
-            speedupsum_dict[f'best_page_{inter}'] = speedupsum_dict[max_key]
-            speedupsum_dict[f'best_page_{inter}_choice'] = max_key.split('-')[1]
+        # for inter in intervals:
+        #     page_keys = [ k for k in speedupsum_dict.keys() if k.startswith('PageUCPPolicy') and k.endswith(inter) ]
+        #     max_key = max(page_keys,key=lambda x: speedupsum_dict[x])
+        #     speedupsum_dict[f'best_page_{inter}'] = speedupsum_dict[max_key]
+        #     speedupsum_dict[f'best_page_{inter}_choice'] = max_key.split('-')[1]
         speedup_sum_list.append(speedupsum_dict)
 
         #calculate ipcsum
@@ -213,11 +249,11 @@ def run_one_conf(select_json:str):
             else:
                 ipcsum_dict[new_key] = pd_dict.pop(k)
         #find best page out of pages_10M
-        for inter in intervals:
-            page_keys = [ k for k in ipcsum_dict.keys() if k.startswith('PageUCPPolicy') and k.endswith(inter) ]
-            max_key = max(page_keys,key=lambda x: ipcsum_dict[x])
-            ipcsum_dict[f'best_page_{inter}'] = ipcsum_dict[max_key]
-            ipcsum_dict[f'best_page_{inter}_choice'] = max_key.split('-')[1]
+        # for inter in intervals:
+        #     page_keys = [ k for k in ipcsum_dict.keys() if k.startswith('PageUCPPolicy') and k.endswith(inter) ]
+        #     max_key = max(page_keys,key=lambda x: ipcsum_dict[x])
+        #     ipcsum_dict[f'best_page_{inter}'] = ipcsum_dict[max_key]
+        #     ipcsum_dict[f'best_page_{inter}_choice'] = max_key.split('-')[1]
             # for k in page_keys:
             #     ipcsum_dict.pop(k)
         ipc_sum_list.append(ipcsum_dict)
@@ -241,12 +277,52 @@ def run_one_conf(select_json:str):
             else:
                 speedupsum_ucp_dict[new_key] = pd_dict.pop(k)
         #find best page out of pages_xM
-        for inter in intervals:
-            page_keys = [ k for k in speedupsum_ucp_dict.keys() if k.startswith('PageUCPPolicy') and k.endswith(inter) ]
-            max_key = max(page_keys,key=lambda x: speedupsum_ucp_dict[x])
-            speedupsum_ucp_dict[f'best_page_{inter}'] = speedupsum_ucp_dict[max_key]
-            speedupsum_ucp_dict[f'best_page_{inter}_choice'] = max_key.split('-')[1]
+        # for inter in intervals:
+        #     page_keys = [ k for k in speedupsum_ucp_dict.keys() if k.startswith('PageUCPPolicy') and k.endswith(inter) ]
+        #     max_key = max(page_keys,key=lambda x: speedupsum_ucp_dict[x])
+        #     speedupsum_ucp_dict[f'best_page_{inter}'] = speedupsum_ucp_dict[max_key]
+        #     speedupsum_ucp_dict[f'best_page_{inter}_choice'] = max_key.split('-')[1]
         speedup_sum_ucp_list.append(speedupsum_ucp_dict)
+
+        #calculate relhitsum
+        relhitsum_keys = [ k for k in pd_dict.keys() if k.endswith('_relhitsum') ]
+        relhitsum_dict = { 'workload': work }
+        for k in relhitsum_keys:
+            new_key = k.rsplit('_',1)[0]
+            drop_flag = False
+            if 'nopart' in new_key:
+                drop_flag = True
+            elif 'OneLess' in new_key or 'TwoLess' in new_key:
+                if not "DynGroup" in new_key:
+                    drop_flag = True
+            elif re.search(r'[2,5]M', new_key):
+                drop_flag = True
+                
+            if drop_flag:
+                pd_dict.pop(k)
+            else:
+                relhitsum_dict[new_key] = pd_dict.pop(k)
+        relhit_sum_list.append(relhitsum_dict)
+
+        #calculate relhitsum_ucp
+        relhitsum_ucp_keys = [ k for k in pd_dict.keys() if k.endswith('_relhitsum_ucp') ]
+        relhitsum_ucp_dict = { 'workload': work }
+        for k in relhitsum_ucp_keys:
+            new_key = k.rsplit('_',2)[0]
+            drop_flag = False
+            if 'nopart' in new_key:
+                drop_flag = True
+            elif 'OneLess' in new_key or 'TwoLess' in new_key:
+                if not "DynGroup" in new_key:
+                    drop_flag = True
+            elif re.search(r'[2,5]M', new_key):
+                drop_flag = True
+                
+            if drop_flag:
+                pd_dict.pop(k)
+            else:
+                relhitsum_ucp_dict[new_key] = pd_dict.pop(k)
+        relhit_sum_ucp_list.append(relhitsum_ucp_dict)
 
 
         pd_dict_list.append(pd_dict)
@@ -267,6 +343,12 @@ def run_one_conf(select_json:str):
 
     df = pd.DataFrame(speedup_sum_ucp_list)
     df.to_excel(twriter, sheet_name=f'weightedspeedup-gain-ucp',index=False,float_format="%.5f")
+
+    df = pd.DataFrame(relhit_sum_list)
+    df.to_excel(twriter, sheet_name=f'relhit-gain',index=False,float_format="%.5f")
+
+    df = pd.DataFrame(relhit_sum_ucp_list)
+    df.to_excel(twriter, sheet_name=f'relhit-gain-ucp',index=False,float_format="%.5f")
 
     twriter.close()
 
