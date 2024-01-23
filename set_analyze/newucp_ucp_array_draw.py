@@ -1,4 +1,3 @@
-from genericpath import isdir
 import os
 import re
 import numpy as np
@@ -48,11 +47,10 @@ def draw_db_by_func(base_dir,n_rows,worksname_paradict,draw_one_func,fig_name,n_
 
     work_stats_dict = {}
     array_base_dir = f'/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/{test_prefix}other/numpy-array'
+    fig_base_dir = f'/nfs/home/zhangchuanqi/lvna/5g/lazycat-data_proc/set_analyze/{test_prefix}other/workload-fig'
     os.makedirs(array_base_dir, exist_ok=True)
-    # npy_array_format = '{}_{}.npy'
+    os.makedirs(fig_base_dir, exist_ok=True)
     
-    n_rows = math.ceil(len(worksname_paradict) / n_cols)
-
     parameters = {'axes.labelsize': 30,
           'axes.titlesize': 30,
           'xtick.labelsize': 24,
@@ -73,82 +71,63 @@ def draw_db_by_func(base_dir,n_rows,worksname_paradict,draw_one_func,fig_name,n_
 
     s_2 = re.compile(r'(\w+)-([\w\.]+)')
 
-    for i,work in enumerate(worksname_paradict):
+    for i,mix_names in enumerate(worksname_paradict):
         # work = worksname[i]
-        para_dict = worksname_paradict[work]
+        workload_names = mix_names.split('-')
+        para_dict = worksname_paradict[mix_names]
         # full_ass = max_assoc
-        word_dir = os.path.join(base_dir,work)
-        if not os.path.isdir(word_dir):
-            continue
-        work_array_dir = os.path.join(array_base_dir, work, para_dict['length'])
+        work_array_dir = os.path.join(array_base_dir, mix_names, para_dict['length'])
+        work_fig_dir = os.path.join(fig_base_dir, mix_names, para_dict['length'])
+
         os.makedirs(work_array_dir, exist_ok=True)
+        os.makedirs(work_fig_dir, exist_ok=True)
+
+        local_hitcnt_array = np.load(os.path.join(work_array_dir,'local_hitcnt_array.npy'))
+        local_hitcnt_diff_array = np.load(os.path.join(work_array_dir,'local_hitcnt_diff_array.npy'))
+        # global_ucp_decision_array = np.load(os.path.join(work_array_dir,'global_ucp_decision_array.npy'))
+        # global_hitcnt_array = np.load(os.path.join(work_array_dir,'global_hitcnt_array.npy'))
+        # global_hitcnt_diff_array = np.load(os.path.join(work_array_dir,'global_hitcnt_diff_array.npy'))
+
+        interval_num = local_hitcnt_diff_array.shape[0]
         
-        new_base = os.path.join(word_dir,f'l3-{para_dict["policy"]}-{para_dict["length"]}')
-        db_path = os.path.join(new_base,'hm.db')
-        con = sqlite3.connect(db_path)
-        cur = con.cursor()
+        local_full_hitcnt_array = local_hitcnt_array.sum(axis=3)
+        # local_full_hitcnt_array = local_hitcnt_diff_array.sum(axis=3)
+
+        group_sizes = [ 1<< g for g in range(8,13) ]
+        for g in group_sizes:
+            tmp_group_array = local_full_hitcnt_array.reshape(interval_num,-1,g,ncpus)
+            hit_group_array = tmp_group_array.sum(axis=2)
+            ngroups = all_set // g
+            fig = plt.figure()
+            fig.set_size_inches(8*ncpus, 6)
+            ax = []
+            for c in range(ncpus):
+                cpu_hit_array = hit_group_array[:,:,c]
+                ax = fig.add_subplot(1,ncpus,c+1, projection='3d')
+
+                #draw
+                _x = np.arange(ngroups)
+                _y = np.arange(interval_num)
+                _xx, _yy = np.meshgrid(_x, _y)
+                x, y = _xx.ravel(), _yy.ravel()
+                bottom = np.zeros_like(x)
+                top = cpu_hit_array.ravel()
+                width = depth = 1
+                ax.bar3d(x, y, bottom, width, depth, top, shade=True)
+                
+                ax.set_xlabel('group', labelpad=20)
+                ax.set_ylabel('interval', labelpad=20)
+                ax.set_zlabel('hitcnt', labelpad=20)
+                ax.set_title(f'{workload_names[c]}')
+
+            fig.tight_layout()
+            fig.savefig(os.path.join(work_fig_dir,f'hitremain-group-{g}.png'),dpi=300)
+            plt.close(fig)
+
+
+
         
-        max_interval_query = 'SELECT MAX(INTERVAL) FROM UCPLookahead;'
-        f_max = cur.execute(max_interval_query)
-        interval_num = 0
-        for mval in f_max:
-            interval_num = int(mval[0]) + 1
-        cur.close()
 
-        local_hitcnt_array = np.zeros((interval_num,all_set,ncpus,max_assoc),dtype=int)
-        local_hitcnt_diff_array = np.zeros((interval_num,all_set,ncpus,max_assoc),dtype=int)
-        global_ucp_decision_array = np.zeros((interval_num,ncpus),dtype=int)
-        global_hitcnt_array = np.zeros((interval_num,ncpus,max_assoc),dtype=int)
-        global_hitcnt_diff_array = np.zeros((interval_num,ncpus,max_assoc),dtype=int)
-        
-        for tti in range(interval_num):
-            #record set local
-            cur = con.cursor()
-            local_hitcnt_query = f'SELECT SETIDX,HITCNTS FROM UCPLookahead WHERE INTERVAL = {tti} AND SETIDX != {all_set};'
-            f = cur.execute(local_hitcnt_query)
-            for setidx,idhitcnts in f:
-                setidx = int(setidx)
-                #record hitcnts of each cpu
-                idhitcnts = idhitcnts.strip().split(' ')
-                for cpu,hitcnts in enumerate(idhitcnts):
-                    hitcnts = hitcnts.strip().split('-')
-                    hitcnts = [int(x) for x in hitcnts]
-                    local_hitcnt_array[tti,setidx,cpu,:] = hitcnts
-                    if (tti == 0):
-                        local_hitcnt_diff_array[tti,setidx,cpu,:] = hitcnts
-                    else:
-                        local_hitcnt_diff_array[tti,setidx,cpu,:] = hitcnts - np.right_shift(local_hitcnt_array[tti-1,setidx,cpu,:],1)
-            cur.close()
-            # record global
-            cur = con.cursor()
-            global_hitcnt_query = f'SELECT HITCNTS,ALLOCATIONS FROM UCPLookahead WHERE INTERVAL = {tti} AND SETIDX = {all_set};'
-            f = cur.execute(global_hitcnt_query)
-            for idhitcnts, allocs in f:
-                #record hitcnts of each cpu
-                idhitcnts = idhitcnts.strip().split(' ')
-                for cpu,hitcnts in enumerate(idhitcnts):
-                    hitcnts = hitcnts.strip().split('-')
-                    hitcnts = [int(x) for x in hitcnts]
-                    global_hitcnt_array[tti,cpu,:] = hitcnts
-                    if (tti == 0):
-                        global_hitcnt_diff_array[tti,cpu,:] = hitcnts
-                    else:
-                        global_hitcnt_diff_array[tti,cpu,:] = hitcnts - np.right_shift(global_hitcnt_array[tti-1,cpu,:],1)
-                #record allocation decision
-                allocs = allocs.strip().split(' ')
-                allocs = [int(x) for x in allocs]
-                global_ucp_decision_array[tti,:] = allocs
-
-            cur.close()
-
-        con.close()
-
-        #save to npy files
-        np.save(os.path.join(work_array_dir,'local_hitcnt_array.npy'),local_hitcnt_array)
-        np.save(os.path.join(work_array_dir,'local_hitcnt_diff_array.npy'),local_hitcnt_diff_array)
-        np.save(os.path.join(work_array_dir,'global_hitcnt_array.npy'),global_hitcnt_array)
-        np.save(os.path.join(work_array_dir,'global_hitcnt_diff_array.npy'),global_hitcnt_diff_array)
-        np.save(os.path.join(work_array_dir,'global_ucp_decision_array.npy'),global_ucp_decision_array)
 
 def run_one_conf(select_json:str):
     with open(select_json,'r') as f:
