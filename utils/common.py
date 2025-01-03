@@ -759,55 +759,86 @@ def extract_samples_raw_json(base_dir,ncores=4,last_nsamples = 4,target=t.llc_ne
         json.dump(one_dict, testfile, indent=4)
     return one_dict
 
-def extract_newgem_raw_json(base_dir,ncores,last_nsamples = 1,target=t.llc_targets_newgem):
+def extract_newgem_raw_json(base_dir,ncores,last_nsamples = 1,target=t.llc_targets_newgem,need_hits=True):
     st_file = os.path.join(base_dir,"stats.txt")
     st_filter_file = os.path.join(base_dir,f"{last_nsamples}period.json")
     target_keys = []
+    extra_keys = []
     if ncores > 1:
         target_keys.extend([f'cpu{i}.ipc' for i in range(ncores)])
         target_keys.extend([f'cpu{i}.numCycles' for i in range(ncores)])
         target_keys.extend([f'cpu{i}.committedInsts' for i in range(ncores)])
-        extra_keys = []
-        extra_keys.extend([f'l3.demandHits::cpu{i}.mmu.dtb' for i in range(ncores)])
-        extra_keys.extend([f'l3.demandHits::cpu{i}.mmu.itb' for i in range(ncores)])
-        extra_keys.extend([f'l3.demandHits::cpu{i}.inst' for i in range(ncores)])
-        extra_keys.extend([f'l3.demandHits::cpu{i}.data' for i in range(ncores)])
-        extra_keys.extend([f'l3.demandHits::l2{i}.prefetcher' for i in range(ncores)])
-        extra_keys.extend([f'l3.demandMisses::cpu{i}.mmu.dtb' for i in range(ncores)])
-        extra_keys.extend([f'l3.demandMisses::cpu{i}.mmu.itb' for i in range(ncores)])
-        extra_keys.extend([f'l3.demandMisses::cpu{i}.inst' for i in range(ncores)])
-        extra_keys.extend([f'l3.demandMisses::cpu{i}.data' for i in range(ncores)])
-        extra_keys.extend([f'l3.demandMisses::l2{i}.prefetcher' for i in range(ncores)])
+        if need_hits:
+            extra_keys.extend([f'l3.demandHits::cpu{i}.mmu.dtb' for i in range(ncores)])
+            extra_keys.extend([f'l3.demandHits::cpu{i}.mmu.itb' for i in range(ncores)])
+            extra_keys.extend([f'l3.demandHits::cpu{i}.inst' for i in range(ncores)])
+            extra_keys.extend([f'l3.demandHits::cpu{i}.data' for i in range(ncores)])
+            extra_keys.extend([f'l3.demandHits::l2{i}.prefetcher' for i in range(ncores)])
+            extra_keys.extend([f'l3.demandMisses::cpu{i}.mmu.dtb' for i in range(ncores)])
+            extra_keys.extend([f'l3.demandMisses::cpu{i}.mmu.itb' for i in range(ncores)])
+            extra_keys.extend([f'l3.demandMisses::cpu{i}.inst' for i in range(ncores)])
+            extra_keys.extend([f'l3.demandMisses::cpu{i}.data' for i in range(ncores)])
+            extra_keys.extend([f'l3.demandMisses::l2{i}.prefetcher' for i in range(ncores)])
+            extra_keys.extend([f'l3.demandMisses::cpu{i}.dcache.prefetcher' for i in range(ncores)])
     else:
         target_keys.append(f'cpu.ipc')
         target_keys.append(f'cpu.numCycles')
         target_keys.append(f'cpu.committedInsts')
-        extra_keys = []
-        extra_keys.append(f'l3.demandHits::cpu.mmu.dtb')
-        extra_keys.append(f'l3.demandHits::cpu.mmu.itb')
-        extra_keys.append(f'l3.demandHits::cpu.inst')
-        extra_keys.append(f'l3.demandHits::cpu.data')
-        extra_keys.append(f'l3.demandHits::l2.prefetcher')
-        extra_keys.append(f'l3.demandMisses::cpu.mmu.dtb')
-        extra_keys.append(f'l3.demandMisses::cpu.mmu.itb')
-        extra_keys.append(f'l3.demandMisses::cpu.inst')
-        extra_keys.append(f'l3.demandMisses::cpu.data')
-        extra_keys.append(f'l3.demandMisses::l2.prefetcher')
+        if need_hits:
+            extra_keys.append(f'l3.demandHits::cpu.mmu.dtb')
+            extra_keys.append(f'l3.demandHits::cpu.mmu.itb')
+            extra_keys.append(f'l3.demandHits::cpu.inst')
+            extra_keys.append(f'l3.demandHits::cpu.data')
+            extra_keys.append(f'l3.demandHits::l2.prefetcher')
+            extra_keys.append(f'l3.demandHits::cpu.dcache.prefetcher')
+            extra_keys.append(f'l3.demandMisses::cpu.mmu.dtb')
+            extra_keys.append(f'l3.demandMisses::cpu.mmu.itb')
+            extra_keys.append(f'l3.demandMisses::cpu.inst')
+            extra_keys.append(f'l3.demandMisses::cpu.data')
+            extra_keys.append(f'l3.demandMisses::l2.prefetcher')
+            extra_keys.append(f'l3.demandMisses::cpu.dcache.prefetcher')
+            for ps in range(13):
+                extra_keys.append(f'l3.overallPFSrcHits::{ps}')
+                extra_keys.append(f'l3.overallPFSrcMisses::{ps}')
+                extra_keys.append(f'dcache.prefetcher.pfIssued_srcs::{ps}')
+                extra_keys.append(f'dcache.prefetcher.pfUseful_srcs::{ps}')
+                extra_keys.append(f'l2.prefetcher.pfIssued_srcs::{ps}')
+                extra_keys.append(f'l2.prefetcher.pfUseful_srcs::{ps}')
+                extra_keys.append(f'l3.prefetcher.pfIssued_srcs::{ps}')
+                extra_keys.append(f'l3.prefetcher.pfUseful_srcs::{ps}')
     target_keys.extend(extra_keys)
-    target_keys.extend(['l3.demandMissRate','l3.demandHits','l3.demandMisses'])
+    if need_hits:
+        target_keys.extend(['l3.demandMissRate','l3.demandHits','l3.demandMisses'])
     stats_get_func = multi_stats_lastn_factory(target, target_keys,last_n=last_nsamples)
     one_dict = stats_get_func(st_file)
+    assert one_dict is not None
     if ncores > 1:
-        for i in range(ncores):
-            hit_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demandHits' in x, one_dict.keys())
-            demandHits = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], hit_iter))
-            miss_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demandMisses' in x, one_dict.keys())
-            demandMisses = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], miss_iter))
-            demandMissesRate = demandMisses / (demandHits + demandMisses)
-            one_dict[f'l3.demandMissRate::cpu{i}'] = demandMissesRate.tolist()
-            one_dict[f'l3.demandMisses::cpu{i}'] = demandMisses.tolist()
-            one_dict[f'l3.demandHits::cpu{i}'] = demandHits.tolist()
-            one_dict[f'l3_mpki_cpu{i}'] = (demandMisses/np.array(one_dict[f'cpu{i}.committedInsts'])  * 1000).tolist()
+        if need_hits:
+            for i in range(ncores):
+                hit_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demandHits' in x, one_dict.keys())
+                demandHits = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], hit_iter))
+                miss_iter = filter(lambda x: f'cpu{i}' in x and 'l3.demandMisses' in x, one_dict.keys())
+                demandMisses = reduce(lambda x,y: np.array(x)+np.array(y), map(lambda x: one_dict[x], miss_iter))
+                demandMissesRate = demandMisses / (demandHits + demandMisses)
+                one_dict[f'l3.demandMissRate::cpu{i}'] = demandMissesRate.tolist()
+                one_dict[f'l3.demandMisses::cpu{i}'] = demandMisses.tolist()
+                one_dict[f'l3.demandHits::cpu{i}'] = demandHits.tolist()
+                one_dict[f'l3_mpki_cpu{i}'] = (demandMisses/np.array(one_dict[f'cpu{i}.committedInsts'])  * 1000).tolist()
+    else:
+        if need_hits:
+            one_dict['l3.demandHitsPF'] = one_dict['l3.demandHits::cpu.dcache.prefetcher']
+            one_dict['l3.demandMissesPF'] = one_dict['l3.demandMisses::cpu.dcache.prefetcher']
+            pf_miss_rate = np.array(one_dict['l3.demandMissesPF']) / (np.array(one_dict['l3.demandHitsPF']) + np.array(one_dict['l3.demandMissesPF']))
+            one_dict['l3.demandMissRatePF'] = pf_miss_rate.tolist()
+            for ps in range(13):
+                one_dict[f'l3.hitsPFSrc_{ps}'] = one_dict[f'l3.overallPFSrcHits::{ps}']
+                one_dict[f'l3.missesPFSrc_{ps}'] = one_dict[f'l3.overallPFSrcMisses::{ps}']
+                one_dict[f'dcache.pfIssuedSrc_{ps}'] = one_dict[f'dcache.prefetcher.pfIssued_srcs::{ps}']
+                one_dict[f'dcache.pfUsefulSrc_{ps}'] = one_dict[f'dcache.prefetcher.pfUseful_srcs::{ps}']
+                one_dict[f'l2.pfIssuedSrc_{ps}'] = one_dict[f'l2.prefetcher.pfIssued_srcs::{ps}']
+                one_dict[f'l2.pfUsefulSrc_{ps}'] = one_dict[f'l2.prefetcher.pfUseful_srcs::{ps}']
+                one_dict[f'l3.pfIssuedSrc_{ps}'] = one_dict[f'l3.prefetcher.pfIssued_srcs::{ps}']
+                one_dict[f'l3.pfUsefulSrc_{ps}'] = one_dict[f'l3.prefetcher.pfUseful_srcs::{ps}']
     for k in extra_keys:
         one_dict.pop(k)
     with open(st_filter_file, 'w') as testfile:

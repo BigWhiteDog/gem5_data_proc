@@ -82,11 +82,21 @@ llc_targets_newgem = [
     '(l3\.demandHits::cpu\d*.inst)',
     '(l3\.demandHits::cpu\d*.data)',
     '(l3\.demandHits::l2\d*.prefetcher)',
+    '(l3\.demandHits::cpu\d*.dcache.prefetcher)',
     '(l3\.demandMisses::cpu\d*.mmu.dtb)',
     '(l3\.demandMisses::cpu\d*.mmu.itb)',
     '(l3\.demandMisses::cpu\d*.inst)',
     '(l3\.demandMisses::cpu\d*.data)',
     '(l3\.demandMisses::l2\d*.prefetcher)',
+    '(l3\.demandMisses::cpu\d*.dcache.prefetcher)',
+    '(l3\.overallPFSrcHits::\d*)',
+    '(l3\.overallPFSrcMisses::\d*)',
+    '(dcache\.prefetcher\.pfIssued_srcs::\d*)',
+    '(dcache\.prefetcher\.pfUseful_srcs::\d*)',
+    '(l2\.prefetcher\.pfIssued_srcs::\d*)',
+    '(l2\.prefetcher\.pfUseful_srcs::\d*)',
+    '(l3\.prefetcher\.pfIssued_srcs::\d*)',
+    '(l3\.prefetcher\.pfUseful_srcs::\d*)',
 ]
 
 llc_new_targets = [
