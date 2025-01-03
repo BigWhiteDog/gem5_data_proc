@@ -44,20 +44,20 @@ from set_analyze.my_diff_color import *
 # all_set = 16384
 
 
-def draw_one_workload_way_need(ax,s_dicts,workload_name,full_ass,pos:tuple):
+def draw_one_workload_way_need(ax,s_dicts,workload_name,full_ways,pos:tuple):
     label_s = ['min_ways_no_extra_miss','min_ways_1_extra_miss', 'min_ways_2_extra_miss']
     extra0_list = s_dicts[label_s[0]]
     s_extra0_list = sorted(extra0_list)
     x_val = np.arange(all_set)
-    full_ass_vals = np.full(all_set,full_ass)
+    full_ways_vals = np.full(all_set,full_ways)
 
     extra0_list_color = contrasting_orange[15]
     alpha_set = 1.0
     ax.plot(s_extra0_list, label='wasted cache space', color = extra0_list_color,linewidth=2)
-    ax.fill_between(x_val, full_ass_vals, s_extra0_list, color = extra0_list_color, alpha=alpha_set)
-    ax.plot(full_ass_vals,label='95% perf CAT set ways', color = contrasting_orange[4],linewidth=5)
+    ax.fill_between(x_val, full_ways_vals, s_extra0_list, color = extra0_list_color, alpha=alpha_set)
+    ax.plot(full_ways_vals,label='95% perf CAT set ways', color = contrasting_orange[4],linewidth=5)
     if pos[1] == 0:
-        ax.set_ylabel('Needed ways')
+        ax.set_ylabel('Ways')
     ax.set_ylim(0, max_assoc)
     ax.set_xlim(0,all_set)
     ax.yaxis.set_major_locator(ticker.MultipleLocator(2))
@@ -111,13 +111,13 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,n_c
 
     fig,ax = plt.subplots(n_rows,n_cols, sharex=True, sharey=True)
     
-    fig.set_size_inches(n_cols*6, 5*n_rows)
+    fig.set_size_inches(n_cols*6, 3.6*n_rows)
 
     s_2 = re.compile(r'(\w+)-([\w\.]+)')
 
     for i,work in enumerate(worksname_waydict):
         work = worksname[i]
-        full_ass = worksname_waydict[work]
+        full_ways = worksname_waydict[work]
         word_dir = os.path.join(base_dir,work)
         if not os.path.isdir(word_dir):
             continue
@@ -143,7 +143,7 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,n_c
                 if res.group(1) != 'l3':
                     continue
                 ways = int(res.group(2))
-                if ways > full_ass:
+                if ways > full_ways:
                     continue
 
                 new_base = os.path.join(word_dir,part)
@@ -161,8 +161,8 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,n_c
                     s_dicts['ways_miss_cnt'][ways][idx] = msc
 
                 cur.close()
-            s_dicts['min_ways_no_extra_miss'] = [full_ass for _ in range(all_set)]
-            fullass_miss_cnt = s_dicts['ways_miss_cnt'][full_ass]
+            s_dicts['min_ways_no_extra_miss'] = [full_ways for _ in range(all_set)]
+            fullass_miss_cnt = s_dicts['ways_miss_cnt'][full_ways]
 
             for ways in s_dicts['ways_miss_cnt']:
                 my_way_miss_cnt = s_dicts['ways_miss_cnt'][ways]
@@ -173,7 +173,7 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,n_c
             #update workdict
             work_stats_dict[work] = s_dicts
 
-        draw_one_func(ax_bar,s_dicts,work,full_ass,(fx,fy))
+        draw_one_func(ax_bar,s_dicts,work,full_ways,(fx,fy))
 
     for i in range(len(worksname_waydict),n_rows*n_cols):
         fx = i // n_cols
@@ -191,9 +191,9 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,draw_one_func,fig_name,n_c
     legends = [Patch(color=contrasting_orange[4],label=f'95% perf CAT ways'),
                 Patch(color=contrasting_orange[15],label=f'Wasted cache space'),
                 ]
-    fig.legend(handles = legends, loc = 'upper left', ncol = 2 )
+    fig.legend(handles = legends, loc = 'upper left', ncol = 2, borderaxespad=0, labelspacing=0, handlelength=0.5)
 
-    plt.tight_layout(rect=(0, 0, 1, 0.93))
+    plt.tight_layout(rect=(0, 0, 1, 0.94))
     plt.savefig(fig_name,dpi=300)
     plt.clf()
 
@@ -224,9 +224,19 @@ def run_one_conf(select_json:str):
     print(worksname)
     worksname.remove('lbm')
     cache_work_95perf_maxfull_ways.pop('lbm')
+    # work_dict = {}
+    # interest_list = [
+    #     'cam4','omnetpp','parest','roms',
+    #     'xalancbmk','pr_spmv','tc','sphinx'
+    # ]
+    # for w in interest_list:
+    #     work_dict[w] = cache_work_95perf_maxfull_ways[w]
+    # worksname = interest_list
+    # cache_work_95perf_maxfull_ways = work_dict
 
     n_works = len(worksname)
     n_cols = 6
+    # n_cols = 4
     n_rows = math.ceil(n_works/n_cols)
     # draw_db_by_func(base_dir,n_rows,cache_work_90perfways,
     #     draw_one_func=draw_one_workload_way_need,fig_name= os.path.join(pic_dir_path,'way_need_90perf_dis.png'))
@@ -236,7 +246,7 @@ def run_one_conf(select_json:str):
     #     draw_one_func=draw_one_workload_way_need,fig_name=os.path.join(pic_dir_path,'way_need_dis.png'))
     draw_db_by_func(base_dir,n_rows,cache_work_95perf_maxfull_ways,
                     n_cols=n_cols,
-        draw_one_func=draw_one_workload_way_need,fig_name=os.path.join(pic_dir_path,'asplos23_way_need_95perfmax8_dis.png'))
+        draw_one_func=draw_one_workload_way_need,fig_name=os.path.join(pic_dir_path,'hpcc24_way_need_95perfmax8_dis.png'))
 
 
 if __name__ == '__main__':

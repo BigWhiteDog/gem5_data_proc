@@ -187,7 +187,7 @@ def run_one_conf(select_json:str):
     tstep_list = [1,2,4,8]
     for tstep in tstep_list:
         new_pd_list = copy.deepcopy(pd_dict_list)
-        target_perf_list = [0.97,0.975,0.98,0.985,0.99]
+        target_perf_list = [0.95,0.97,0.975,0.98,0.985,0.99]
         maxbuckets = 64//tstep
         for perf in target_perf_list:
             find_grow_target = {}

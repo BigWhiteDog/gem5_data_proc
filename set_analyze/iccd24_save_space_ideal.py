@@ -43,29 +43,40 @@ from set_analyze.my_diff_color import *
 def draw_one_ideal_savespace(ax,s_dicts,workload_name,full_perf_ways,pos:tuple):
     min_ways = s_dicts['min_ways_no_extra_miss']
 
-    x_val = np.arange(1,max_assoc)
+    n_less_way = 3
+    x_val = np.arange(1,n_less_way+1)
 
     saved_kb = []
-    for i in range(1,max_assoc):
-        if i >= full_perf_ways:
+    saved_setnum = []
+    for i in range(1,n_less_way+1):
+        saved_way = i
+        if saved_way > full_perf_ways:
             saved_kb.append(0)
             continue
-        num_satisfy_set = len(list(filter(lambda x: i >= x, min_ways)))
-        saved_way = full_perf_ways - i
+        num_satisfy_set = len(list(filter(lambda x: full_perf_ways - saved_way >= x, min_ways)))
         saved_kb.append(num_satisfy_set * saved_way * 64 // 1024)
+        saved_setnum.append(num_satisfy_set)
 
-    ax.bar(x_val,saved_kb, label = 'saved space', color = '#2FB8FC', width = 0.5)
+    bar_width = 0.3
+
+    ax.bar(x_val - bar_width/2,saved_kb, color = contrasting_orange[0], width = bar_width)
 
     # if pos[1] == 0:
     #     ax.set_ylabel('saved size(KB)')
-    ax.set_ylabel('saved size(KB)')
+    ax.set_ylabel('Space (KB)')
     ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
     # ax.set_ylim(0, 1000)
     # ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
     # ax.yaxis.set_major_locator(MaxNLocator('auto',integer=True))
-    if pos[0] == 1:
-        ax.set_xlabel('settings of Y')
+    # if pos[0] == 1:
+    #     ax.set_xlabel('#ways between bounds')
     ax.set_title(f'{workload_name}')
+
+    ax2 = ax.twinx()
+    ax2.bar(x_val + bar_width/2,saved_setnum, color = contrasting_orange[1], width = bar_width)
+    ax2.set_ylabel('Set number')
+    ax2.set_ylim(0, 1000)
+
     # if pos == (0,0):
     #     ax.legend(shadow=0, fontsize = 13, bbox_to_anchor=(-0.01,1.4), loc = 'upper left',  \
     #         borderaxespad=0.2, ncol = 1, columnspacing=0.5, labelspacing=0.1)
@@ -95,8 +106,8 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,analyze_func,draw_one_func
     plt.rcParams.update(parameters)
 
 
-    fig,ax = plt.subplots(n_rows,n_cols,sharex=True)
-    fig.set_size_inches(n_cols*6, 5*n_rows)
+    fig,ax = plt.subplots(n_rows,n_cols,sharex=True,sharey=True)
+    fig.set_size_inches(n_cols*6, 3.4*n_rows)
 
     # work_stats_dict = {}
     # if input_stats_dict is not None:
@@ -126,7 +137,13 @@ def draw_db_by_func(base_dir,n_rows,worksname_waydict,analyze_func,draw_one_func
         fy = i % n_cols
         ax[fx,fy].remove()
 
-    plt.tight_layout()
+    legends = [ Patch(color=contrasting_orange[0],label='0-tail-utility space (KB)'),
+                Patch(color=contrasting_orange[1],label='0-tail-utility set number'),
+                ]
+    fig.legend(handles = legends, loc = 'upper left', ncol = 2, borderaxespad=0)
+    fig.text(0.5, 0.04, f'number of ways between bounds', ha='center', va='center', fontsize=30)
+
+    plt.tight_layout(rect=(0, 0.01, 1, 0.93))
     plt.savefig(fig_name,dpi=300)
     plt.clf()
 
@@ -159,14 +176,14 @@ def run_one_conf(select_json:str):
     n_works = len(worksname)
 
     global n_cols
-    n_cols= 6
+    n_cols= 12
     n_rows = math.ceil(n_works/n_cols)
 
     waydict_format = 'cache_work_{}ways'
     perf_prefixs = ['95perf']
     # perf_prefixs = ['90perf','95perf','full']
     draw_picformat = [
-        (draw_one_ideal_savespace,'asplos23_ideal_save_{}.png',os.path.join(csv_dir_path,'min0way_{}')),
+        (draw_one_ideal_savespace,'iccd24_ideal_save_{}.png',os.path.join(csv_dir_path,'min0way_{}')),
     ]
 
     for perf_prefix in perf_prefixs:
